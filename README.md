@@ -2,6 +2,9 @@
 
 TerminCount is a small, dependency‑light web app for quickly configuring and running simple vote counts (meetings, assemblies, classrooms, live demos). Set up to 4 options, collect votes via keyboard or mouse, undo the last vote, and see live totals and percentages.
 
+## Live Demo
+https://termincount.diegosr.es
+
 ## Key Features
 * Up to 4 custom options (blank entries are ignored)
 * Keyboard voting (keys 1–4) and full click area per option
@@ -42,6 +45,38 @@ js/core-dyn.js      # Poll creation, voting logic, live updates
 ## Dependencies
 * [Bootstrap 5 (CSS/JS via CDN)](https://getbootstrap.com/)
 * [jQuery 3.x (CDN)](https://jquery.com/) – currently used for some DOM/event helpers; roadmap includes a migration to vanilla JS.
+
+## Run with Docker
+Build image:
+```
+docker build -t termincount:latest .
+```
+Run container (port 8080 -> 80):
+```
+docker run --rm -p 8080:80 termincount:latest
+```
+Then open: http://localhost:8080
+
+Minimal one‑liner:
+```
+docker build -t termincount . && docker run --rm -p 8080:80 termincount
+```
+
+### Using docker compose (optional)
+Create a simple `compose.yml`:
+```yaml
+services:
+	web:
+		image: termincount:latest
+		build: .
+		ports:
+			- "8080:80"
+		restart: unless-stopped
+```
+Launch:
+```
+docker compose up --build
+```
 
 ## Contributing
 Issues and PRs are welcome. Please keep changes small and focused. For new text, remember to update all language dictionaries.
