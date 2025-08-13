@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <title data-i18n="app.title">TerminCount - Recuento de votos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Aplicación ligera para recuento de votos">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://code.jquery.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+  <link rel="stylesheet" href="css/style.css">
+  <!-- i18n debe cargarse antes de scripts que generen texto -->
+  <script src="js/i18n.js" defer></script>
+  <script src="js/app-init.js" defer></script>
+</head>
+
+<body class="bg-light d-flex flex-column min-vh-100">
+  <div class="container app-container py-4 flex-grow-1">
+    <header class="d-flex align-items-center justify-content-between flex-wrap gap-3 border-bottom pb-3 mb-4">
+      <div class="d-flex align-items-center gap-3">
+        <img src="termincount-mini.png" alt="TerminCount" style="height:64px;width:auto;" class="flex-shrink-0">
+        <h1 class="h3 mb-0" data-i18n="header.title">Recuento de votos</h1>
+      </div>
+      <div class="ms-auto d-flex align-items-center gap-2">
+        <label for="lang-select" class="form-label mb-0 small visually-hidden">Idioma</label>
+        <select id="lang-select" class="form-select form-select-sm" style="width:auto;min-width:140px;">
+          <option value="es">Español</option>
+          <option value="ca">Català</option>
+          <option value="gl">Galego</option>
+          <option value="eu">Euskara</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+    </header>
+    <nav aria-label="Atajos de teclado" class="mb-2">
+      <ul class="list-inline small mb-0" id="lista"></ul>
+    </nav>
+    <h2 id="question" class="text-primary h4"></h2>
+    <div class="row g-4">
+      <div class="col-12" id="input">
+        <h3 class="h5 mb-3" data-i18n="config.heading">Configuración de la votación</h3>
+        <div class="mb-3">
+          <label for="title" class="form-label" data-i18n="label.title">Título de la votación</label>
+          <input type="text" id="title" class="form-control" placeholder="Escriba el título" data-i18n-placeholder="ph.title" autocomplete="off">
+        </div>
+        <div id="voteOptions" class="mb-3" aria-describedby="help-max help-default">
+          <label for="o1" class="form-label" data-i18n="label.options">Opciones de voto</label>
+          <input type="text" id="o1" class="form-control my-2" placeholder="Escriba la opción 1" data-i18n-placeholder="ph.option" data-n="1" autocomplete="off">
+          <div id="help-max" class="form-text" data-i18n="help.max">Puede añadir hasta 4 opciones. Dejar en blanco para omitir.</div>
+          <div id="help-default" class="form-text mt-1" data-i18n-html="help.default"><strong>NOTA:</strong> <strong>Si deja todas las casillas vacías y pulsa "Pasar a recuento" se usarán las opciones por defecto: A favor, En contra, Blanco y Nulo.</strong></div>
+        </div>
+        <div class="d-flex flex-wrap gap-2 mb-2">
+          <button class="btn btn-outline-secondary" type="button" id="addEntrie" aria-describedby="help-max" data-i18n="btn.add">Añadir opción</button>
+          <button class="btn btn-primary" type="button" id="startPoll" aria-describedby="help-default" data-i18n="btn.start">Pasar a recuento</button>
+        </div>
+      </div>
+      <div class="col-12" id="col-lg-12" hidden>
+        <h3 class="h6 fw-semibold"><span data-i18n="votes.emitted">Votos emitidos:</span> <span id="votos-emitidos" class="badge text-bg-info">0</span></h3>
+  <ul id="option-container" class="list-unstyled" aria-live="polite" role="list"></ul>
+      </div>
+    </div>
+  </div>
+  <footer class="text-center py-3 border-top mt-auto small bg-white">
+    <p>&copy; 2016-2025 Diego Sanchis Reig. All rights reserved.</p>
+    <a href="https://github.com/Termindiego25" target="_blank" rel="noopener noreferrer">GitHub</a> |
+    <a href="https://linkedin.com/in/diegosr1998" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+  </footer>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"
+    integrity="sha384-7qAoOXltbVP82dhxHAUje59V5r2YsVfBafyUDxEdApLPmcdhBPg1DKg1ERo0BZlK"
+    crossorigin="anonymous"></script>
+  <script src="js/core-dyn.js"></script>
+</body>
+
+</html>
