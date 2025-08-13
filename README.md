@@ -64,14 +64,14 @@ docker build -t termincount . && docker run --rm -p 8080:80 termincount
 
 ### Using docker compose (optional)
 Create a simple `compose.yml`:
-```yaml
+``` yaml
 services:
-	web:
-		image: termincount:latest
-		build: .
-		ports:
-			- "8080:80"
-		restart: unless-stopped
+    web:
+        image: termincount:latest
+        build: .
+        ports:
+            - "8080:80"
+        restart: unless-stopped
 ```
 Launch:
 ```
