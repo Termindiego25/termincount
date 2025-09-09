@@ -85,4 +85,4 @@ Issues and PRs are welcome. Please keep changes small and focused. For new text,
 * Original author: Termindiego25
 
 ## License
-GPL-3.0 license – see `LICENSE` for full text.
+GPL-3.0 license – see [LICENSE](LICENSE) for full text.
