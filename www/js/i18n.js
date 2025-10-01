@@ -139,7 +139,7 @@
 	if (!dictionaries[current]) current = 'en';
 
 	function format(str, params) {
-		return str.replace(/\{(\w+)\}/g, (m, k) => params && params[k] != null ? params[k] : m);
+		return str.replace(/\{(\w+)\}/g, (m, k) => (params && params[k] != null ? params[k] : m));
 	}
 
 	function t(key, params) {
@@ -149,18 +149,26 @@
 
 	function apply() {
 		document.documentElement.lang = current;
+		// <title> + cualquier [data-i18n]
 		document.title = t('app.title');
 		document.querySelectorAll('[data-i18n]').forEach(el => {
 			el.textContent = t(el.dataset.i18n);
 		});
+		// placeholders
 		document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
 			el.placeholder = t(el.dataset.i18nPlaceholder, {
 				n: el.dataset.n
 			});
 		});
+		// innerHTML (para notas con <strong>, etc.)
 		document.querySelectorAll('[data-i18n-html]').forEach(el => {
 			el.innerHTML = t(el.dataset.i18nHtml);
 		});
+		// aria-labels
+		document.querySelectorAll('[data-i18n-aria-label]').forEach(el => {
+			el.setAttribute('aria-label', t(el.dataset.i18nAriaLabel));
+		});
+		// sincroniza el selector
 		const sel = document.getElementById('lang-select');
 		if (sel && sel.value !== current) sel.value = current;
 	}
@@ -172,19 +180,23 @@
 			apply();
 		}
 	}
+
+	// API pública
 	window.I18N = {
 		t,
 		apply,
 		setLang,
 		getLang: () => current
 	};
+	// Compat con código previo
+	window.__setLang = setLang;
+
 	document.addEventListener('DOMContentLoaded', () => {
 		apply();
 		const langSelect = document.getElementById('lang-select');
 		if (langSelect) {
-			langSelect.addEventListener('change', e => {
-				const lang = e.target.value;
-				window.__setLang?.(lang);
+			langSelect.addEventListener('change', (e) => {
+				I18N.setLang(e.target.value); // << fix aquí
 			});
 		}
 	});
