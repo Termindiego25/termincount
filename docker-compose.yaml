@@ -1,0 +1,14 @@
+name: termincount
+services:
+    termincount:
+        container_name: termincount
+        build:
+            context: .
+        image: termincount
+        restart: unless-stopped
+        volumes:
+            - "~/ssl/diegosr.es:/etc/nginx/certs:ro"
+
+networks:
+    default:
+        name: termincount_net

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="auto">
+	<head>
+		<meta charset="UTF-8">
+		<title data-i18n="app.title">TerminCount - Recuento de votos</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="description" content="Aplicación ligera para recuento de votos">
+		<meta http-equiv="Content-Security-Policy"
+			content="
+			default-src 'self';
+			script-src 'self' https://cdn.jsdelivr.net https://code.jquery.com;
+			style-src  'self' 'unsafe-inline' https://cdn.jsdelivr.net;
+			img-src    'self' data:;
+			font-src   'self' https://cdn.jsdelivr.net data:;
+			connect-src 'self' https://cdn.jsdelivr.net;
+			object-src 'none';
+			base-uri 'self';
+			form-action 'self';
+			upgrade-insecure-requests">
+		<link rel="apple-touch-icon" sizes="57x57" href="/images/favicon/apple-icon-57x57.png">
+		<link rel="apple-touch-icon" sizes="60x60" href="/images/favicon/apple-icon-60x60.png">
+		<link rel="apple-touch-icon" sizes="72x72" href="/images/favicon/apple-icon-72x72.png">
+		<link rel="apple-touch-icon" sizes="76x76" href="/images/favicon/apple-icon-76x76.png">
+		<link rel="apple-touch-icon" sizes="114x114" href="/images/favicon/apple-icon-114x114.png">
+		<link rel="apple-touch-icon" sizes="120x120" href="/images/favicon/apple-icon-120x120.png">
+		<link rel="apple-touch-icon" sizes="144x144" href="/images/favicon/apple-icon-144x144.png">
+		<link rel="apple-touch-icon" sizes="152x152" href="/images/favicon/apple-icon-152x152.png">
+		<link rel="apple-touch-icon" sizes="180x180" href="/images/favicon/apple-icon-180x180.png">
+		<link rel="icon" type="image/png" sizes="192x192"  href="/images/favicon/android-icon-192x192.png">
+		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon/favicon-32x32.png">
+		<link rel="icon" type="image/png" sizes="96x96" href="/images/favicon/favicon-96x96.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon/favicon-16x16.png">
+		<link rel="manifest" href="/images/favicon/manifest.json">
+		<meta name="msapplication-TileColor" content="#ffffff">
+		<meta name="msapplication-TileImage" content="/images/favicon/ms-icon-144x144.png">
+		<meta name="theme-color" content="#ffffff" id="meta-theme-color">
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet"
+			integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+		<link rel="stylesheet" href="/css/style.css">
+		<script src="/js/theme.js" defer></script>
+		<script src="/js/i18n.js" defer></script>
+		<script src="/js/app-init.js" defer></script>
+		<script src="/js/nav.js" defer></script>
+	</head>
+	<body class="bg d-flex flex-column min-vh-100">
+		<div class="glow"></div>
+		<div class="container app-container py-4 flex-grow-1">
+			<header class="d-flex align-items-center justify-content-between no-wrap gap-3 border-bottom pb-3 mb-4">
+				<a class="brand" href="/" aria-label="Inicio">
+					<div class="d-flex align-items-center gap-3">
+						<img src="/images/termincount-mini.png" alt="TerminCount" style="height:64px;width:auto;" class="flex-shrink-0">
+						<h1 class="h3 mb-0 brand-text" data-i18n="header.title">Recuento de votos</h1>
+					</div>
+				</a>
+				<nav class="nav" aria-label="Principal">
+					<button class="menu-toggle"
+						data-i18n-aria-label="nav.menu.open"
+						aria-controls="primary-nav"
+						aria-expanded="false"
+						aria-label="Abrir menú">☰</button>
+					<div id="nav-backdrop" class="nav-backdrop" hidden></div>
+					<div id="primary-nav" class="nav-links">
+						<a href="https://github.com/termindiego25/termincount" target="_blank" rel="noopener noreferrer">GitHub</a>
+						<div class="theme-controls">
+							<select id="lang-select" class="btn btn-ghost small" aria-label="Idioma">
+								<option value="es" lang="es">Español</option>
+								<option value="en" lang="en">English</option>
+								<option value="ca" lang="ca">Català</option>
+								<option value="gl" lang="gl">Galego</option>
+								<option value="eu" lang="eu">Euskara</option>
+							</select>
+							<button class="btn btn-ghost small" data-action="toggle-theme" aria-label="Cambiar tema">🌓</button>
+							<button class="btn btn-ghost small" data-action="auto-theme" aria-label="Automático">AUTO</button>
+						</div>
+					</div>
+				</nav>
+			</header>
+			<nav aria-label="Atajos de teclado" class="mb-2">
+				<ul class="list-inline small mb-0" id="lista"></ul>
+			</nav>
+			<h2 id="question" class="text-primary h4"></h2>
+			<div class="row g-4">
+				<div class="col-12" id="input">
+					<h3 class="h5 mb-3" data-i18n="config.heading">Configuración de la votación</h3>
+					<div class="mb-3">
+						<label for="title" class="form-label" data-i18n="label.title">Título de la votación</label>
+						<input type="text" id="title" class="form-control" placeholder="Escriba el título" data-i18n-placeholder="ph.title" autocomplete="off">
+					</div>
+					<div id="voteOptions" class="mb-3" aria-describedby="help-max help-default">
+						<label for="o1" class="form-label" data-i18n="label.options">Opciones de voto</label>
+						<input type="text" id="o1" class="form-control my-2" placeholder="Escriba la opción 1" data-i18n-placeholder="ph.option" data-n="1" autocomplete="off">
+						<div id="help-max" class="form-text" data-i18n="help.max">Puede añadir hasta 4 opciones. Dejar en blanco para omitir.</div>
+						<div id="help-default" class="form-text mt-1" data-i18n-html="help.default">
+							<strong>NOTA:</strong> <strong>Si deja todas las casillas vacías y pulsa "Pasar a recuento" se usarán las opciones por defecto: A favor, En contra, Blanco y Nulo.</strong>
+						</div>
+					</div>
+					<div class="d-flex flex-wrap gap-2 mb-2">
+						<button class="btn btn-outline-secondary" type="button" id="addEntrie" aria-describedby="help-max" data-i18n="btn.add">Añadir opción</button>
+						<button class="btn btn-primary" type="button" id="startPoll" aria-describedby="help-default" data-i18n="btn.start">Pasar a recuento</button>
+					</div>
+				</div>
+				<div class="col-12" id="col-lg-12" hidden>
+					<h3 class="h6 fw-semibold">
+						<span data-i18n="votes.emitted">Votos emitidos:</span>
+						<span id="votos-emitidos" class="badge text-bg-info">0</span>
+					</h3>
+					<ul id="option-container" class="list-unstyled" aria-live="polite" role="list"></ul>
+				</div>
+			</div>
+		</div>
+		<footer class="text-center py-3 mt-auto small">
+			<p class="legal-line" data-i18n="footer">
+				© 2025 Diego Sanchis Reig. Todos los derechos reservados.
+			</p>
+			<a href="https://github.com/Termindiego25"
+				target="_blank" rel="noopener noreferrer me"
+				aria-label="GitHub" class="social-inline">
+			<i class="bi bi-github" aria-hidden="true"></i>
+			<span class="visually-hidden">GitHub</span>
+			</a>
+			<a href="https://linkedin.com/in/diegosr1998"
+				target="_blank" rel="noopener noreferrer me"
+				aria-label="LinkedIn" class="social-inline">
+			<i class="bi bi-linkedin" aria-hidden="true"></i>
+			<span class="visually-hidden">LinkedIn</span>
+			</a>
+		</footer>
+		<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.min.js"
+			integrity="sha384-7qAoOXltbVP82dhxHAUje59V5r2YsVfBafyUDxEdApLPmcdhBPg1DKg1ERo0BZlK"
+			crossorigin="anonymous"></script>
+		<script src="/js/core-dyn.js"></script>
+	</body>
+</html>
