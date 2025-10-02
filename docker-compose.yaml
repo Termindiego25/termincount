@@ -1,14 +1,20 @@
 name: termincount
 services:
-    termincount:
-        container_name: termincount
-        build:
-            context: .
-        image: termincount
-        restart: unless-stopped
-        volumes:
-            - "./ssl:/etc/nginx/certs:ro"
+  termincount:
+    container_name: termincount
+    image: termincount:latest
+    restart: unless-stopped
+    environment:
+      - TERMINCOUNT_DOMAIN=localhost
+    ports:
+      - "8080:80"      # HTTP
+      - "8443:443"     # HTTPS (optional, requires mounted certs)
+    volumes:
+      # Mount certificates if you want HTTPS
+      # ./ssl/fullchain.pem -> /etc/nginx/certs/fullchain.pem
+      # ./ssl/privkey.pem   -> /etc/nginx/certs/privkey.pem
+      - "./ssl:/etc/nginx/certs:ro"
 
 networks:
-    default:
-        name: termincount_net
+  default:
+    name: termincount_net
