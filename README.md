@@ -65,6 +65,8 @@ nginx.conf
 
 ## 🐳 Run from Docker Hub (recommended)
 
+👉 [https://hub.docker.com/r/termindiego25/termincount](https://hub.docker.com/r/termindiego25/termincount)
+
 ### HTTP
 
 #### CLI
