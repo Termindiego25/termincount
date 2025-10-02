@@ -7,7 +7,7 @@ services:
         image: termincount
         restart: unless-stopped
         volumes:
-            - "~/ssl/diegosr.es:/etc/nginx/certs:ro"
+            - "./ssl:/etc/nginx/certs:ro"
 
 networks:
     default:
