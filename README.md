@@ -213,7 +213,7 @@ When adding new text, update all language dictionaries.
 
 ## 👤 Credits
 
-* Original author: **[Termindiego25](https://github.com/Termindiego25)**
+* Original author: **[Termindiego25](https://www.diegosr.es)**
 
 ---
 
