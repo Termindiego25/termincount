@@ -10,7 +10,7 @@ RUN rm -rf /usr/share/nginx/html/*
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY www /usr/share/nginx/html
 
-EXPOSE 443
+EXPOSE 80 443
 
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD wget -qO- --no-check-certificate https://localhost/ || exit 1
 
