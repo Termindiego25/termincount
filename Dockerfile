@@ -3,7 +3,7 @@ FROM nginx:1.29.1-alpine
 LABEL org.opencontainers.image.title="TerminCount" \
       org.opencontainers.image.description="Lightweight vote counter web app" \
       org.opencontainers.image.url="https://github.com/Termindiego25/termincount" \
-      org.opencontainers.image.licenses="MIT"
+      org.opencontainers.image.licenses="GPL-3.0"
 
 RUN rm -rf /usr/share/nginx/html/*
 
