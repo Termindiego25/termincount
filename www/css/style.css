@@ -28,6 +28,7 @@ html[data-theme="light"] {
 }
 
 @media (prefers-color-scheme: light) {
+
 	html[data-theme="auto"],
 	html[data-theme=""] {
 		--bg: #fcfdff;
@@ -43,6 +44,7 @@ html[data-theme="light"] {
 }
 
 @media (prefers-color-scheme: dark) {
+
 	html[data-theme="auto"],
 	html[data-theme=""] {
 		--bg: #0b1220;
@@ -447,6 +449,7 @@ html[data-theme="light"] {
 }
 
 @media (prefers-color-scheme: light) {
+
 	html[data-theme="auto"],
 	html[data-theme=""] {
 		--bg: #fcfdff;
@@ -462,6 +465,7 @@ html[data-theme="light"] {
 }
 
 @media (prefers-color-scheme: dark) {
+
 	html[data-theme="auto"],
 	html[data-theme=""] {
 		--bg: #0b1220;
@@ -856,4 +860,88 @@ footer a:hover {
 	.social-inline .bi {
 		font-size: 1.1rem;
 	}
+}
+
+html[data-theme="light"],
+html[data-theme=""] {
+	--accent1: #3b82f6;
+	--accent2: #10b981;
+	--accent3: #ef4444;
+	--accent4: #f59e0b;
+	--accent5: #8b5cf6;
+	--accent6: #14b8a6;
+	--accent7: #ec4899;
+	--accent8: #f97316;
+	--accent9: #0d6efd;
+}
+
+@media (prefers-color-scheme: dark) {
+
+	html[data-theme="auto"],
+	html[data-theme=""] {
+		--accent1: #60a5fa;
+		--accent2: #34d399;
+		--accent3: #f87171;
+		--accent4: #fbbf24;
+		--accent5: #a78bfa;
+		--accent6: #2dd4bf;
+		--accent7: #f472b6;
+		--accent8: #fb923c;
+		--accent9: #0d6efd;
+	}
+}
+
+html[data-theme="dark"] {
+	--accent1: #60a5fa;
+	--accent2: #34d399;
+	--accent3: #f87171;
+	--accent4: #fbbf24;
+	--accent5: #a78bfa;
+	--accent6: #2dd4bf;
+	--accent7: #f472b6;
+	--accent8: #fb923c;
+	--accent9: #0d6efd;
+}
+
+.progress-bar.accent-1 {
+	background-color: var(--accent1) !important;
+}
+
+.progress-bar.accent-2 {
+	background-color: var(--accent2) !important;
+}
+
+.progress-bar.accent-3 {
+	background-color: var(--accent3) !important;
+}
+
+.progress-bar.accent-4 {
+	background-color: var(--accent4) !important;
+}
+
+.progress-bar.accent-5 {
+	background-color: var(--accent5) !important;
+}
+
+.progress-bar.accent-6 {
+	background-color: var(--accent6) !important;
+}
+
+.progress-bar.accent-7 {
+	background-color: var(--accent7) !important;
+}
+
+.progress-bar.accent-8 {
+	background-color: var(--accent8) !important;
+}
+
+.progress-bar.accent-9 {
+	background-color: var(--accent9) !important;
+}
+
+.progress-bar.pattern {
+	background-image: repeating-linear-gradient(45deg,
+			rgba(0, 0, 0, .15) 0 6px,
+			transparent 6px 12px);
+	background-blend-mode: multiply;
 }

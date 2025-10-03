@@ -14,7 +14,7 @@
 		const voteOptions = document.getElementById('voteOptions');
 		const existing = voteOptions.querySelectorAll('input[type="text"]').length;
 		const addBtn = document.getElementById('addEntrie');
-		if (existing >= 4) {
+		if (existing >= 9) {
 			if (addBtn) addBtn.disabled = true;
 			return;
 		}
@@ -38,7 +38,7 @@
 		if (window.I18N?.apply) I18N.apply();
 		input.focus();
 
-		if (next >= 4 && addBtn) addBtn.disabled = true;
+		if (next >= 9 && addBtn) addBtn.disabled = true;
 	}
 
 	function buildOptions(options) {
@@ -46,25 +46,26 @@
 			question: window.I18N ? I18N.t('poll.default.question') : 'Votación',
 			slots: [{
 					slotlabel: window.I18N ? I18N.t('poll.default.opt.afavor') : 'A favor',
-					barType: 'success'
+					barType: 'accent-2'
 				},
 				{
 					slotlabel: window.I18N ? I18N.t('poll.default.opt.encontra') : 'En contra',
-					barType: 'danger'
+					barType: 'accent-3'
 				},
 				{
 					slotlabel: window.I18N ? I18N.t('poll.default.opt.blanco') : 'Blanco',
-					barType: 'warning'
+					barType: 'accent-4'
 				},
 				{
 					slotlabel: window.I18N ? I18N.t('poll.default.opt.nulo') : 'Nulo',
-					barType: 'info'
+					barType: 'accent-5'
 				}
 			]
 		};
 
 		if (!options) {
 			options = defaults;
+			numOptions = 4;
 			generateTopList(options);
 		}
 
@@ -82,7 +83,7 @@
             <span class="option-percentage text-body-secondary small">0%</span>
           </h2>
           <div class="progress" style="height:1.25rem;">
-            <div id="slot-${i}" class="progress-bar bg-${slot.barType}" role="progressbar"
+            <div id="slot-${i}" class="progress-bar ${slot.barType}" role="progressbar"
                  aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%"></div>
           </div>
         </li>`;
@@ -112,7 +113,7 @@
 		const $list = $('#lista');
 		$list.empty();
 
-		options.slots.slice(0, 4).forEach((slot, i) => {
+		options.slots.slice(0, numOptions).forEach((slot, i) => {
 			const txt = window.I18N ?
 				I18N.t('shortcut.template', {
 					n: (i + 1),
@@ -144,11 +145,11 @@
 			// Undo con 'r' o 'R'
 			if (stackKey.length !== 0 && (event.key === 'r' || event.key === 'R')) {
 				const last = stackKey.pop();
-				const pos = last - 49; // de '1'..'4' a 0..3
+				const pos = last - 49; // de '1'..'9' a 0..8
 				target = $('#slot-' + pos);
 				targetLabel = $('#slot-' + pos + '-label');
 				addVotes = -1;
-			} else if (event.key >= '1' && event.key <= '4') {
+			} else if (event.key >= '1' && event.key <= numOptions) {
 				const pos = event.key.charCodeAt(0) - 49;
 				if (pos < numOptions) {
 					stackKey.push(event.key.charCodeAt(0));
@@ -198,13 +199,13 @@
 		});
 
 		const question = document.getElementById('title').value.trim();
-		const inputs = Array.from(document.querySelectorAll('#voteOptions input[type="text"]')).slice(0, 4);
-		const colors = ['info', 'success', 'danger', 'warning'];
+		const inputs = Array.from(document.querySelectorAll('#voteOptions input[type="text"]')).slice(0, 9);
+		const colors = ['accent-9','accent-2','accent-3','accent-4','accent-5','accent-1','accent-6','accent-7','accent-8'];
 		const slots = inputs
 			.filter(i => i.value.trim() !== '')
 			.map((i, idx) => ({
 				slotlabel: i.value.trim(),
-				barType: colors[(idx + 1) % 4]
+				barType: colors[(idx + 1) % 9]
 			}));
 
 		if (slots.length === 0) {
