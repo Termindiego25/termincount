@@ -1,0 +1,8 @@
+docker build -t termindiego25/termincount:latest .
+docker run --rm -p 8080:80 -e TERMINCOUNT_DOMAIN=localhost termindiego25/termincount:latest
+
+
+docker buildx create --use --name termincount-builder
+docker buildx inspect --bootstrap
+
+docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 -t termindiego25/termincount:1.0.0 -t termindiego25/termincount:latest --push .
