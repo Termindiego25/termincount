@@ -1,7 +1,7 @@
 # TerminCount – Lightweight Vote Counter
 
 TerminCount is a lightweight, dependency-minimal web app to quickly configure and run simple vote counts (meetings, assemblies, classrooms, live demos).
-Set up to 4 options, collect votes via keyboard or mouse, undo the last vote, and see live totals and percentages — all in a clean, accessible UI.
+Set up to 9 options, collect votes via keyboard or mouse, undo the last vote, and see live totals and percentages — all in a clean, accessible UI.
 
 ## 🌐 Live Demo
 
@@ -11,8 +11,8 @@ Set up to 4 options, collect votes via keyboard or mouse, undo the last vote, an
 
 ## ✨ Key Features
 
-* Up to **4 custom options** (blank entries are ignored; defaults: In favor / Against / Blank / Null).
-* **Keyboard voting** (keys 1–4) and **clickable cards**.
+* Up to **9 custom options** (blank entries are ignored; defaults: In favor / Against / Blank / Null).
+* **Keyboard voting** (keys 1–9) and **clickable cards**.
 * **Undo last vote** (key **R**).
 * **Live totals + percentages** with animated progress bars.
 * **Multi-language UI**: Spanish, Catalan, Galician, Basque, English
