@@ -30,6 +30,7 @@ const voting = await readFile(fromRoot('src', 'lib', 'voting.ts'), 'utf8');
 const css = await readFile(fromRoot('src', 'app.css'), 'utf8');
 const dockerfile = await readFile(fromRoot('Dockerfile'), 'utf8');
 const compose = await readFile(fromRoot('docker-compose.yaml'), 'utf8');
+const composeEnvExample = await readFile(fromRoot('termincount.env.example'), 'utf8');
 const manifest = JSON.parse(await readFile(fromRoot('static', 'images', 'favicon', 'manifest.json'), 'utf8'));
 const source = [appHtml, page, shell, pollPage, i18n, voting, css].join('\n');
 
@@ -89,9 +90,16 @@ check(/org\.opencontainers\.image\.version="\$\{VERSION\}"/.test(dockerfile), 'D
 check(/org\.opencontainers\.image\.authors=/.test(dockerfile), 'Dockerfile should expose OCI author metadata.');
 check(/postgres:18-alpine/.test(compose), 'Docker Compose should include PostgreSQL 18 Alpine.');
 check(!/container_name:/.test(compose), 'Docker Compose should not pin container names, so services remain scalable.');
+check(/POSTGRES_PASSWORD_FILE: \/run\/secrets\/db_password/.test(compose), 'Docker Compose should pass the PostgreSQL password through Docker Secrets.');
+check(/DB_PASSWORD_FILE: \/run\/secrets\/db_password/.test(compose), 'Docker Compose should pass the app database password through Docker Secrets.');
 check(/\.\/data\/postgres:\/var\/lib\/postgresql/.test(compose), 'Docker Compose should store PostgreSQL data in the project data folder.');
 check(/\$\{TERMINCOUNT_PORT:-8080\}:3000/.test(compose), 'Docker Compose should map the host app port to the non-privileged container port.');
-check(/DATABASE_URL: postgres:\/\/termincount:\$\{POSTGRES_PASSWORD:-termincount\}@db:5432\/termincount/.test(compose), 'Docker Compose should wire the app to PostgreSQL.');
+check(/DB_HOST: db/.test(compose), 'Docker Compose should wire the app to the PostgreSQL service.');
+check(/ORIGIN=http:\/\/localhost:8080/.test(composeEnvExample), 'TerminCount env example should include a local ORIGIN.');
+check(
+	/TERMINCOUNT_DB_POOL_SIZE=10/.test(composeEnvExample),
+	'TerminCount env example should document the default database pool size.'
+);
 
 if (failures.length > 0) {
 	console.error(failures.map((failure) => `- ${failure}`).join('\n'));

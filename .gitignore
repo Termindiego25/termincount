@@ -5,6 +5,7 @@ playwright-report/
 test-results/
 coverage/
 data/
+secrets/credentials/*.txt
 ssl/
 *.env
 *.zip

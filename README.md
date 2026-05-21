@@ -38,7 +38,20 @@ The public URL is not a permission token. Modification rights are tied to the br
 The recommended deployment uses the app container plus PostgreSQL:
 
 ```bash
-docker compose up -d --build
+cp termincount.env.example termincount.env
+cp postgresql.env.example postgresql.env
+cp secrets/credentials/db_database.txt.example secrets/credentials/db_database.txt
+cp secrets/credentials/db_username.txt.example secrets/credentials/db_username.txt
+cp secrets/credentials/db_password.txt.example secrets/credentials/db_password.txt
+docker compose up -d
+```
+
+Edit the generated files before production use, especially `secrets/credentials/db_password.txt` and `ORIGIN` in `termincount.env`.
+
+For a public deployment on the project domain, `termincount.env` should contain:
+
+```env
+ORIGIN=https://termincount.diegosr.es
 ```
 
 Open [http://localhost:8080](http://localhost:8080).
@@ -46,7 +59,9 @@ Open [http://localhost:8080](http://localhost:8080).
 The Compose file starts:
 
 - `termincount`: SvelteKit Node server.
-- `termincount-db`: PostgreSQL 18 with persistent data in `./data/postgres`.
+- `db`: PostgreSQL 18 with persistent data in `./data/postgres`.
+
+Database credentials are provided through Docker Secrets. Non-sensitive app settings such as `ORIGIN`, retention days, and cleanup interval are loaded from `termincount.env`.
 
 The `data/` folder is ignored by Git and Docker builds. To make a simple offline backup, stop the containers and back up the project folder, including `data/postgres`. For a live production backup, prefer a PostgreSQL dump so the backup is transaction-consistent.
 
@@ -66,6 +81,13 @@ docker run -d \
 
 For most installations, Docker Compose is easier because it includes PostgreSQL.
 
+To build the image locally from the repository instead of using Docker Hub:
+
+```bash
+docker build -t termindiego25/termincount:latest .
+docker compose up -d
+```
+
 Available image tags:
 
 - `1.3.0`: exact release.
@@ -74,21 +96,53 @@ Available image tags:
 
 ## Configuration
 
+`TERMINCOUNT_DOMAIN` belonged to the old static server used before version 1.3 and is no longer used. TerminCount now runs as a SvelteKit Node server over HTTP inside the container. Use `ORIGIN` for the public URL and put HTTPS certificates in the reverse proxy, not in the app container.
+
 Environment variables:
 
 | Variable | Default | Description |
 | --- | --- | --- |
 | `DATABASE_URL` | `postgres://termincount:termincount@127.0.0.1:5432/termincount` | PostgreSQL connection string. |
-| `POSTGRES_PASSWORD` | `termincount` in Compose | PostgreSQL password used by Docker Compose. Change it in production. |
+| `DATABASE_URL_FILE` | unset | File containing the full PostgreSQL connection string. Useful with Docker Secrets. |
+| `DB_HOST` | `127.0.0.1` | PostgreSQL host used when `DATABASE_URL` is not set. |
+| `DB_PORT` | `5432` | PostgreSQL port used when `DATABASE_URL` is not set. |
+| `DB_NAME` / `DB_NAME_FILE` | `termincount` | PostgreSQL database name, or file containing it. |
+| `DB_USER` / `DB_USER_FILE` | `termincount` | PostgreSQL username, or file containing it. |
+| `DB_PASSWORD` / `DB_PASSWORD_FILE` | `termincount` | PostgreSQL password, or file containing it. |
 | `POSTGRES_PORT` | `5432` in Compose | Host port exposed for PostgreSQL. |
 | `TERMINCOUNT_PORT` | `8080` in Compose | Host port exposed for the web app. |
 | `TERMINCOUNT_RETENTION_DAYS` | `7` | Number of days before temporary polls expire. |
 | `TERMINCOUNT_CLEANUP_INTERVAL_MINUTES` | `60` | Interval for automatic cleanup of expired polls. |
-| `ORIGIN` | unset | Public origin used by SvelteKit behind proxies. Set this in production. |
+| `TERMINCOUNT_DB_POOL_SIZE` | `10` | Maximum PostgreSQL connections used by each app container. |
+| `ORIGIN` | unset | Full public origin used for generated share links and trusted proxied requests. Use scheme plus host, and optional port, without a trailing slash. Example: `https://termincount.diegosr.es`. Set this in production. |
 | `HOST` | `0.0.0.0` in Docker | Host used by the Node server. |
 | `PORT` | `3000` in Docker | Port used by the Node server. |
 
 Retention is intentionally configured in days because result links are meant to be temporary but useful after the meeting.
+
+## Domain And Reverse Proxy
+
+Point the domain DNS record to the server that runs your reverse proxy. The proxy should terminate HTTPS and forward requests to TerminCount over HTTP.
+
+If the proxy runs in the same Docker network as the app, forward to:
+
+```text
+http://termincount:3000
+```
+
+If the proxy runs directly on the host and uses the Compose-published port, forward to:
+
+```text
+http://127.0.0.1:8080
+```
+
+Then set the public origin in `termincount.env`:
+
+```env
+ORIGIN=https://termincount.diegosr.es
+```
+
+Do not set `ORIGIN` to the internal container address. It must be the URL that users open in their browser.
 
 ## Persistence And Scaling
 
@@ -98,7 +152,7 @@ PostgreSQL `LISTEN` / `NOTIFY` broadcasts result changes to every app instance, 
 
 ## HTTPS
 
-TerminCount serves HTTP inside the container. For production, run it behind a reverse proxy that handles HTTPS, certificates, compression, and HTTP-to-HTTPS redirects. Good options include Traefik, Caddy, Nginx Proxy Manager, Cloudflare Tunnel, or your hosting platform's built-in proxy.
+TerminCount serves HTTP inside the container. For production, run it behind a reverse proxy that handles HTTPS, certificates, compression, and HTTP-to-HTTPS redirects. Good options include Traefik, Caddy, Nginx Proxy Manager, Cloudflare Tunnel, or your hosting platform's built-in proxy. Mount TLS certificates into that proxy, not into the TerminCount app container.
 
 When using a reverse proxy, set `ORIGIN` to the public HTTPS URL, for example:
 
