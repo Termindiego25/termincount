@@ -4,6 +4,7 @@ build/
 playwright-report/
 test-results/
 coverage/
+data/
 ssl/
 *.env
 *.zip

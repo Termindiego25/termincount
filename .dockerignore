@@ -6,6 +6,7 @@ node_modules
 playwright-report
 test-results
 coverage
+data
 ssl
 *.env
 *.zip

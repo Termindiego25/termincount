@@ -1,19 +1,38 @@
 name: termincount
+
 services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: termincount
+      POSTGRES_USER: termincount
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-termincount}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U termincount -d termincount"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   termincount:
-    container_name: termincount
     image: termincount:latest
     build:
       context: .
     restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
-      - TERMINCOUNT_DOMAIN=localhost
+      DATABASE_URL: postgres://termincount:${POSTGRES_PASSWORD:-termincount}@db:5432/termincount
+      TERMINCOUNT_RETENTION_DAYS: ${TERMINCOUNT_RETENTION_DAYS:-7}
+      TERMINCOUNT_CLEANUP_INTERVAL_MINUTES: ${TERMINCOUNT_CLEANUP_INTERVAL_MINUTES:-60}
+      ORIGIN: ${ORIGIN:-http://localhost:8080}
     ports:
-      - "8080:80"
-      # Uncomment the next line and the volume below to enable HTTPS locally.
-      # - "8443:443"
-    # volumes:
-    #   - "./ssl:/etc/termincount/certs:ro"
+      - "${TERMINCOUNT_PORT:-8080}:3000"
 
 networks:
   default:

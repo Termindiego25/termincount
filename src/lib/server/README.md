@@ -1,13 +1,10 @@
-# Future Server Boundary
+# Server Boundary
 
-This folder is intentionally empty for version 1.2.
+This folder contains server-only code for TerminCount:
 
-When TerminCount grows beyond local/manual counting, keep server-only code here:
+- PostgreSQL connection and schema initialization
+- session hashing and owner checks
+- poll creation, voting, undo, and cleanup logic
+- realtime fan-out through PostgreSQL `LISTEN` / `NOTIFY`
 
-- database clients and migrations
-- poll/result persistence
-- share-token validation
-- vote ingestion and anti-abuse checks
-- realtime adapters or server-sent event helpers
-
-SvelteKit excludes `$lib/server` modules from client bundles, which makes this the right boundary for future database-backed features.
+Files in `$lib/server` are intentionally unavailable to browser bundles, which keeps database credentials and session internals on the server side.
