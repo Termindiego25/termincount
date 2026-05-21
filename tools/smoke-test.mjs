@@ -64,9 +64,10 @@ for (const icon of manifest.icons || []) {
 	check(await exists(iconPath), `Manifest icon is missing: ${icon.src}`);
 }
 
-check(/FROM node:24-alpine AS build/.test(dockerfile), 'Dockerfile should use the active Node LTS build stage.');
+check(/FROM --platform=\$BUILDPLATFORM node:lts-alpine AS build/.test(dockerfile), 'Dockerfile should use the active Node LTS Alpine build stage.');
 check(/ARG NPM_VERSION=11\.15\.0/.test(dockerfile), 'Dockerfile should pin the current npm version in the build stage.');
-check(/FROM golang:(?:[\w.-]+-)?alpine AS static-server/.test(dockerfile), 'Dockerfile should compile the static runtime with a Go Alpine build stage.');
+check(/FROM --platform=\$BUILDPLATFORM golang:alpine AS static-server/.test(dockerfile), 'Dockerfile should compile the static runtime with a Go Alpine build stage.');
+check(/ARG TARGETARCH/.test(dockerfile), 'Dockerfile should cross-compile the static runtime for the target platform.');
 check(/FROM scratch/.test(dockerfile), 'Dockerfile should use a scratch runtime image.');
 check(/COPY --from=build \/app\/build \/srv\/termincount/.test(dockerfile), 'Dockerfile should copy the SvelteKit build output.');
 check(/org\.opencontainers\.image\.version="\$\{VERSION\}"/.test(dockerfile), 'Dockerfile should expose OCI version metadata.');

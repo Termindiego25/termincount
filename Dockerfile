@@ -1,4 +1,6 @@
-FROM node:alpine AS build
+# syntax=docker/dockerfile:1.7
+
+FROM --platform=$BUILDPLATFORM node:lts-alpine AS build
 
 WORKDIR /app
 
@@ -12,11 +14,22 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM golang:alpine AS static-server
+FROM --platform=$BUILDPLATFORM golang:alpine AS static-server
 
 WORKDIR /src
+ARG TARGETOS=linux
+ARG TARGETARCH
+ARG TARGETVARIANT
 COPY tools/static-server/main.go .
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/termincount-server ./main.go
+RUN set -eux; \
+    goarch="${TARGETARCH:-$(go env GOARCH)}"; \
+    goos="${TARGETOS:-linux}"; \
+    if [ "$goarch" = "arm" ]; then \
+      goarm="${TARGETVARIANT#v}"; \
+      if [ "$goarm" = "$TARGETVARIANT" ] || [ -z "$goarm" ]; then goarm="7"; fi; \
+      export GOARM="$goarm"; \
+    fi; \
+    CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" go build -trimpath -ldflags="-s -w" -o /out/termincount-server ./main.go
 
 FROM scratch
 
