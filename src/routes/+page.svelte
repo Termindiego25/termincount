@@ -88,6 +88,21 @@
 		flash(index);
 	}
 
+	function releasePointerFocus(event: MouseEvent) {
+		if (event.detail === 0) return;
+		const target = event.currentTarget as HTMLElement;
+		window.requestAnimationFrame(() => {
+			if (document.activeElement === target) {
+				target.blur();
+			}
+		});
+	}
+
+	function handleVoteClick(index: number, event: MouseEvent) {
+		vote(index);
+		releasePointerFocus(event);
+	}
+
 	function undoLastVote() {
 		if (!history.length) return;
 		const index = history[history.length - 1];
@@ -96,6 +111,11 @@
 			countIndex === index ? Math.max(0, count - 1) : count
 		);
 		flash(index);
+	}
+
+	function handleUndoClick(event: MouseEvent) {
+		undoLastVote();
+		releasePointerFocus(event);
 	}
 
 	function resetToHome() {
@@ -127,12 +147,16 @@
 		}, 460);
 	}
 
-	function isFormControl(target: EventTarget | null): boolean {
-		return target instanceof HTMLElement && Boolean(target.closest('input, textarea, select, button'));
+	function shouldIgnoreShortcutTarget(target: EventTarget | null): boolean {
+		if (!(target instanceof HTMLElement)) return false;
+		if (target.closest('input, textarea, select, [contenteditable="true"]')) return true;
+
+		const focusedButton = target.closest('button');
+		return Boolean(focusedButton && !focusedButton.matches('.vote-option, #deshacer'));
 	}
 
 	function handleGlobalKeydown(event: KeyboardEvent) {
-		if (!isRunning || event.defaultPrevented || isFormControl(event.target)) return;
+		if (!isRunning || event.defaultPrevented || shouldIgnoreShortcutTarget(event.target)) return;
 
 		if (event.key === 'r' || event.key === 'R') {
 			event.preventDefault();
@@ -383,7 +407,7 @@
 						</li>
 					{/each}
 					<li class="mt-3 list-inline-item" id="deshacer-wrapper">
-						<button id="deshacer" type="button" class="btn btn-sm btn-outline-danger" onclick={undoLastVote}>
+						<button id="deshacer" type="button" class="btn btn-sm btn-outline-danger" onclick={handleUndoClick}>
 							{t(currentLang, 'btn.undo')}
 						</button>
 					</li>
@@ -460,7 +484,7 @@
 									data-index={index}
 									aria-keyshortcuts={String(index + 1)}
 									aria-label={t(currentLang, 'vote.option.aria', { n: index + 1, label: slot.slotlabel })}
-									onclick={() => vote(index)}
+									onclick={(event) => handleVoteClick(index, event)}
 								>
 									<span class="option-heading h6 mb-2 d-flex align-items-center gap-2 flex-wrap">
 										<span class="option-label-text flex-grow-1">{slot.slotlabel}</span>

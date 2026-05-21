@@ -1,23 +1,38 @@
 # TerminCount
 
-TerminCount es una aplicación ligera para configurar y realizar recuentos manuales de votos. Está pensada para reuniones, asambleas, clases, demostraciones en directo o cualquier situación donde haga falta contar opciones de forma rápida desde el navegador.
+TerminCount is a lightweight web app for setting up and running manual vote counts from the browser. It is designed for meetings, assemblies, classrooms, live demos, and any situation where you need a fast, clear way to count votes across a small set of options.
 
-Demo: [https://termincount.diegosr.es](https://termincount.diegosr.es)
+Live demo: [https://termincount.diegosr.es](https://termincount.diegosr.es)
 
-## Funcionalidades
+Docker Hub: [termindiego25/termincount](https://hub.docker.com/r/termindiego25/termincount)
 
-- Recuento manual con opciones personalizadas.
-- Hasta 9 opciones de voto.
-- Opciones por defecto cuando no se configura ninguna: a favor, en contra, blanco y nulo.
-- Atajos de teclado con las teclas `1` a `9`, y `R` para deshacer el último voto.
-- Totales y porcentajes en tiempo real.
-- Interfaz en español, catalán, gallego, euskera e inglés.
-- Tema claro, oscuro o automático según el sistema.
-- Funcionamiento 100% local en el navegador, sin enviar datos a ningún servidor.
+## Features
 
-## Uso Con DockerHub
+- Manual vote counting with custom options.
+- Up to 9 voting options.
+- Default options when no custom option is provided: in favour, against, blank, and null.
+- Keyboard shortcuts with keys `1` to `9`, plus `R` to undo the last vote.
+- Clickable and keyboard-focusable vote rows.
+- Live totals and percentages.
+- Spanish, Catalan, Galician, Basque, and English interface.
+- Light, dark, and system theme modes.
+- Logo/title link that returns to the setup screen.
+- Fully local counting workflow. Votes are not sent to any remote service.
 
-La forma más sencilla de desplegar TerminCount es usando la imagen publicada en DockerHub:
+## How It Works
+
+1. Enter an optional poll title.
+2. Add one or more voting options, or leave the setup empty to use the default options.
+3. Start the count.
+4. Register votes by clicking an option or by pressing the matching number key.
+5. Use `R` or the undo button to undo the last vote.
+6. Click the logo/title to return to the setup screen.
+
+Language and theme preferences are stored in the browser with `localStorage`. Vote counts are kept in the current browser session only.
+
+## Run With Docker Hub
+
+The easiest way to run TerminCount is to use the published Docker image:
 
 ```bash
 docker run -d \
@@ -27,139 +42,176 @@ docker run -d \
   termindiego25/termincount:latest
 ```
 
-Después abre [http://localhost:8080](http://localhost:8080).
+Open [http://localhost:8080](http://localhost:8080).
 
-También puedes usar una etiqueta concreta:
+You can also pin a specific version:
 
 ```bash
 docker run -d \
   --name termincount \
   --restart unless-stopped \
   -p 8080:80 \
-  termindiego25/termincount:latest
+  termindiego25/termincount:1.2.0
 ```
 
-Etiquetas disponibles:
+Available tags:
 
-- `1.2.0`: versión exacta.
-- `1.2`: última versión compatible dentro de la rama 1.2.
-- `latest`: última versión publicada.
+- `1.2.0`: exact release.
+- `1.2`: latest compatible release in the 1.2 series.
+- `latest`: latest published release.
 
-## Uso Desde GitHub
+By default, the container serves HTTP on internal port `80`. Internal port `443` is only enabled when TLS certificates are mounted into the container.
 
-Clona el repositorio:
+## Run From GitHub
+
+Clone the repository:
 
 ```bash
 git clone https://github.com/Termindiego25/termincount.git
 cd termincount
 ```
 
-Arranca la aplicación con Docker Compose:
+Start the app with Docker Compose:
 
 ```bash
 docker compose up -d --build
 ```
 
-Después abre [http://localhost:8080](http://localhost:8080).
+Open [http://localhost:8080](http://localhost:8080).
 
-## Desarrollo Local
+## Optional HTTPS
 
-Instala las dependencias:
+For production deployments, the recommended setup is to run TerminCount behind a reverse proxy that handles HTTPS, such as Traefik, Caddy, Nginx Proxy Manager, Cloudflare Tunnel, or your hosting platform's built-in proxy. In that setup, TerminCount can keep serving plain HTTP inside the private Docker network while the proxy handles certificates, renewals, and HTTP-to-HTTPS redirects.
+
+The container can also serve HTTPS directly if you mount TLS certificates at `/etc/termincount/certs` with these filenames:
+
+- `fullchain.pem`
+- `privkey.pem`
+
+Example:
+
+```bash
+docker run -d \
+  --name termincount \
+  --restart unless-stopped \
+  -p 80:80 \
+  -p 443:443 \
+  -v ./ssl:/etc/termincount/certs:ro \
+  termindiego25/termincount:latest
+```
+
+When both certificate files are present, the container serves HTTPS and redirects HTTP to HTTPS. If the certificates are not mounted, publishing `443:443` has no effect because the HTTPS server is not started.
+
+For local HTTPS testing, you can map `8443:443`, then open `https://localhost:8443`. You will need certificates valid for that hostname, or you will need to accept the browser warning when using self-signed certificates.
+
+## Health Check
+
+The container exposes a health endpoint:
+
+```text
+/healthz
+```
+
+It returns `204 No Content` when the server is running.
+
+## Local Development
+
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-Arranca el servidor de desarrollo:
+Start the development server:
 
 ```bash
 npm run dev
 ```
 
-Por defecto Vite sirve la app en [http://127.0.0.1:8765](http://127.0.0.1:8765), o en el siguiente puerto libre si ese ya está ocupado.
+By default, Vite serves the app at [http://127.0.0.1:8765](http://127.0.0.1:8765), or at the next available port if that one is already in use.
 
-## Comprobaciones
+## Checks
 
-Ejecuta la validación de TypeScript/Svelte y los checks básicos del proyecto:
+Run Svelte/TypeScript validation and project smoke checks:
 
 ```bash
 npm test
 ```
 
-Genera el build estático de producción:
+Build the static production output:
 
 ```bash
 npm run build
 ```
 
-Ejecuta las pruebas end-to-end:
+Run end-to-end browser tests:
 
 ```bash
 npm run build
 npm run test:e2e
 ```
 
-Si Playwright todavía no tiene instalado Chromium:
+If Playwright has not installed Chromium yet:
 
 ```bash
 npx playwright install chromium
 ```
 
-## HTTPS Opcional
+## Technology
 
-El contenedor puede servir HTTPS si se montan certificados en `/etc/termincount/certs` con estos nombres:
+- [SvelteKit](https://svelte.dev/docs/kit) for the app structure and future backend routes.
+- [TypeScript](https://www.typescriptlang.org/) for safer application logic.
+- [Vite](https://vite.dev/) for development and optimized builds.
+- [Bootstrap CSS](https://getbootstrap.com/) as a managed npm dependency, without Bootstrap JavaScript.
+- [Playwright](https://playwright.dev/) for browser regression tests.
+- A minimal Go static server in a `scratch` Docker runtime image.
 
-- `fullchain.pem`
-- `privkey.pem`
+## Docker Image
 
-Ejemplo:
+The production image is intentionally small. Build dependencies are kept in intermediate stages, while the final image contains only:
 
-```bash
-docker run -d \
-  --name termincount \
-  --restart unless-stopped \
-  -p 8080:80 \
-  -p 8443:443 \
-  -v ./ssl:/etc/termincount/certs:ro \
-  termindiego25/termincount:latest
-```
+- the static SvelteKit build output
+- the TerminCount static server binary
 
-Cuando ambos certificados están presentes, el contenedor sirve HTTPS y redirige HTTP a HTTPS.
+The final runtime image is based on `scratch`, exposes ports `80` and `443`, and includes OCI metadata for title, description, author, vendor, documentation, source, version, revision, creation date, and license.
 
-## Tecnología
-
-- [SvelteKit](https://svelte.dev/docs/kit) para estructura de aplicación, rutas y futura evolución hacia backend.
-- [TypeScript](https://www.typescriptlang.org/) para tipado y mantenimiento.
-- [Vite](https://vite.dev/) para desarrollo y build optimizado.
-- [Bootstrap CSS](https://getbootstrap.com/) como dependencia npm gestionada, sin Bootstrap JS.
-- [Playwright](https://playwright.dev/) para pruebas de navegador.
-- Servidor estático mínimo en Go dentro de una imagen Docker `scratch`.
-
-## Estructura
+## Project Structure
 
 ```text
 src/
-  app.html                 Plantilla HTML
-  app.css                  Estilos globales y temas
+  app.html                 HTML template
+  app.css                  Global styles and theme tokens
   lib/
-    i18n.ts                Traducciones
-    voting.ts              Tipos y helpers de votación
-    server/                Zona reservada para futuro backend
+    i18n.ts                Translation dictionaries and helpers
+    voting.ts              Voting types and pure helpers
+    server/                Reserved boundary for future backend code
   routes/
-    +layout.ts             Imports globales y prerender
-    +page.svelte           Interfaz principal
+    +layout.ts             Global imports and prerender configuration
+    +page.svelte           Main interface
 
 static/
-  images/                  Logo, manifest y favicons
+  images/                  Logo, manifest, and favicons
 
 tests/
-  termincount.spec.ts      Pruebas end-to-end
+  termincount.spec.ts      End-to-end tests
 
 tools/
-  smoke-test.mjs           Checks básicos del proyecto
-  static-server/           Servidor mínimo para Docker
+  smoke-test.mjs           Project sanity checks
+  static-server/           Minimal Docker runtime server
 ```
 
-## Licencia
+## Future Direction
 
-GPL-3.0. Consulta [LICENSE](LICENSE).
+Version 1.2 keeps the current manual counting workflow, while the migration to SvelteKit leaves a cleaner foundation for future features such as shareable result URLs, temporary database storage, and a connected voting app.
+
+The intended path for those features is:
+
+1. Keep the interface in SvelteKit.
+2. Add routes such as `/results/[id]` and `/vote/[id]`.
+3. Switch from `@sveltejs/adapter-static` to a server adapter if backend execution is needed.
+4. Add database access under `src/lib/server`.
+5. Choose polling, SSE, WebSockets, or a realtime provider depending on the final hosting model.
+
+## License
+
+GPL-3.0. See [LICENSE](LICENSE).

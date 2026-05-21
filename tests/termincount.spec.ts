@@ -6,11 +6,12 @@ test('runs a default count and undo flow', async ({ page }) => {
 
 	await expect(page.locator('.vote-option')).toHaveCount(4);
 	await page.locator('.vote-option[data-index="0"]').click();
-	await page.locator('.vote-option[data-index="1"]').click();
+	await page.keyboard.press('2');
 	await page.getByRole('button', { name: /undo last vote|deshacer|desfer/i }).click();
+	await page.keyboard.press('1');
 
-	await expect(page.locator('#votos-emitidos')).toHaveText('1');
-	await expect(page.locator('#slot-0-label')).toHaveText('1');
+	await expect(page.locator('#votos-emitidos')).toHaveText('2');
+	await expect(page.locator('#slot-0-label')).toHaveText('2');
 	await expect(page.locator('#slot-1-label')).toHaveText('0');
 });
 
