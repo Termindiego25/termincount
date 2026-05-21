@@ -1,224 +1,165 @@
-# TerminCount – Lightweight Vote Counter
+# TerminCount
 
-TerminCount is a lightweight, dependency-minimal web app to quickly configure and run simple vote counts (meetings, assemblies, classrooms, live demos).
-Set up to 9 options, collect votes via keyboard or mouse, undo the last vote, and see live totals and percentages — all in a clean, accessible UI.
+TerminCount es una aplicación ligera para configurar y realizar recuentos manuales de votos. Está pensada para reuniones, asambleas, clases, demostraciones en directo o cualquier situación donde haga falta contar opciones de forma rápida desde el navegador.
 
-## 🌐 Live Demo
+Demo: [https://termincount.diegosr.es](https://termincount.diegosr.es)
 
-👉 [https://termincount.diegosr.es](https://termincount.diegosr.es)
+## Funcionalidades
 
----
+- Recuento manual con opciones personalizadas.
+- Hasta 9 opciones de voto.
+- Opciones por defecto cuando no se configura ninguna: a favor, en contra, blanco y nulo.
+- Atajos de teclado con las teclas `1` a `9`, y `R` para deshacer el último voto.
+- Totales y porcentajes en tiempo real.
+- Interfaz en español, catalán, gallego, euskera e inglés.
+- Tema claro, oscuro o automático según el sistema.
+- Funcionamiento 100% local en el navegador, sin enviar datos a ningún servidor.
 
-## ✨ Key Features
+## Uso Con DockerHub
 
-* Up to **9 custom options** (blank entries are ignored; defaults: In favor / Against / Blank / Null).
-* **Keyboard voting** (keys 1–9) and **clickable cards**.
-* **Undo last vote** (key **R**).
-* **Live totals + percentages** with animated progress bars.
-* **Multi-language UI**: Spanish, Catalan, Galician, Basque, English
-  (auto-detect + manual selector; English fallback).
-* **Theme selector**: Light, Dark, or Auto (follows OS preference).
-* **Accessibility**: `aria-live` updates, visible focus styles, keyboard-first design.
-* **Responsive modern UI** (Bootstrap 5, flexbox layout).
-* **Footer with inline social links** (GitHub, LinkedIn).
-* Clean separation of UI text (simple **i18n dictionary**).
+La forma más sencilla de desplegar TerminCount es usando la imagen publicada en DockerHub:
 
----
-
-## 🌍 Internationalization (i18n)
-
-* Auto-detects `navigator.language` (first two letters), defaults to English if unsupported.
-* Manual language selector in the header; choice persists to `localStorage`.
-* To add a new language:
-
-  1. Edit `js/i18n.js` and add your dictionary.
-  2. Add `<option value="xx">NativeName</option>` in the language `<select>` (in `index.html`).
-  3. Keep keys consistent across all dictionaries.
-
----
-
-## 🗂 Project Structure
-
-```
-www/
-  index.html        # Main page (UI, footer, theme + lang selectors)
-  css/style.css     # Custom styles (themes, layout, animations, footer icons)
-  js/i18n.js        # Dictionary + runtime switcher
-  js/app-init.js    # Option input management (add fields, start poll)
-  js/core-dyn.js    # Poll creation, voting logic, live updates
-  js/theme.js       # Theme switching (light/dark/auto)
-  js/nav.js         # Responsive nav (mobile menu toggle)
-
-Dockerfile
-nginx.conf
-```
-
----
-
-## 📦 Dependencies
-
-* [Bootstrap 5 (CSS/JS via CDN)](https://getbootstrap.com/)
-* [Bootstrap Icons](https://icons.getbootstrap.com/)
-* [jQuery 3.x](https://jquery.com/) – used for DOM/event helpers (roadmap: migrate to vanilla JS).
-
----
-
-## 🐳 Run from Docker Hub (recommended)
-
-👉 [https://hub.docker.com/r/termindiego25/termincount](https://hub.docker.com/r/termindiego25/termincount)
-
-### HTTP
-
-#### CLI
 ```bash
-docker pull termindiego25/termincount:latest
-docker run --rm -p 8080:80 -e TERMINCOUNT_DOMAIN=localhost termindiego25/termincount:latest
-```
-
-#### Docker Compose
-```yaml
-services:
-  web:
-    image: termindiego25/termincount:latest
-    ports:
-      - "8080:80"
-    environment:
-      - TERMINCOUNT_DOMAIN=localhost
-    restart: unless-stopped
-```
-
-Open: [http://localhost:8080](http://localhost:8080)
-
-### HTTP + HTTPS (with your own certificates)
-
-#### CLI
-```bash
-docker run --rm \
+docker run -d \
+  --name termincount \
+  --restart unless-stopped \
   -p 8080:80 \
-  -p 8443:443 \
-  -e TERMINCOUNT_DOMAIN=localhost \
-  -v "./certs:/etc/nginx/certs:ro" \
-# Alternative (bind individual files instead of the whole folder):
-# -v "./certs/fullchain.pem:/etc/nginx/certs/fullchain.pem:ro" \
-# -v "./certs/privkey.pem:/etc/nginx/certs/privkey.pem:ro" \
   termindiego25/termincount:latest
 ```
 
-#### Docker Compose
-```yaml
-services:
-  web:
-    image: termindiego25/termincount:latest
-    ports:
-      - "8080:80"   # HTTP
-      - "8443:443"  # HTTPS
-    environment:
-      - TERMINCOUNT_DOMAIN=localhost
-    volumes:
-      - "./certs:/etc/nginx/certs:ro"
-      # Alternative (bind individual files):
-      # - "./certs/fullchain.pem:/etc/nginx/certs/fullchain.pem:ro"
-      # - "./certs/privkey.pem:/etc/nginx/certs/privkey.pem:ro"
-    restart: unless-stopped
-```
+Después abre [http://localhost:8080](http://localhost:8080).
 
-Certificates expected inside `./certs`:
+También puedes usar una etiqueta concreta:
 
-* `fullchain.pem`
-* `privkey.pem`
-
-Then open:
-
-* HTTP → **[http://localhost:8080](http://localhost:8080)**
-* HTTPS → **[https://localhost:8443](https://localhost:8443)**
-
----
-
-## 🏗️ Build Locally (optional)
-
-### HTTP
-
-#### CLI
 ```bash
-docker build -t termincount:latest .
-docker run --rm -p 8080:80 -e TERMINCOUNT_DOMAIN=localhost termincount:latest
+docker run -d \
+  --name termincount \
+  --restart unless-stopped \
+  -p 8080:80 \
+  termindiego25/termincount:latest
 ```
 
-#### Docker Compose
-```yaml
-services:
-  web:
-    image: termincount:latest
-    build:
-      context: .
-    ports:
-      - "8080:80"
-    environment:
-      - TERMINCOUNT_DOMAIN=localhost
-    restart: unless-stopped
-```
+Etiquetas disponibles:
 
-### HTTP + HTTPS
+- `1.2.0`: versión exacta.
+- `1.2`: última versión compatible dentro de la rama 1.2.
+- `latest`: última versión publicada.
 
-#### CLI
+## Uso Desde GitHub
+
+Clona el repositorio:
+
 ```bash
-docker build -t termincount:latest .
-docker run --rm \
+git clone https://github.com/Termindiego25/termincount.git
+cd termincount
+```
+
+Arranca la aplicación con Docker Compose:
+
+```bash
+docker compose up -d --build
+```
+
+Después abre [http://localhost:8080](http://localhost:8080).
+
+## Desarrollo Local
+
+Instala las dependencias:
+
+```bash
+npm install
+```
+
+Arranca el servidor de desarrollo:
+
+```bash
+npm run dev
+```
+
+Por defecto Vite sirve la app en [http://127.0.0.1:8765](http://127.0.0.1:8765), o en el siguiente puerto libre si ese ya está ocupado.
+
+## Comprobaciones
+
+Ejecuta la validación de TypeScript/Svelte y los checks básicos del proyecto:
+
+```bash
+npm test
+```
+
+Genera el build estático de producción:
+
+```bash
+npm run build
+```
+
+Ejecuta las pruebas end-to-end:
+
+```bash
+npm run build
+npm run test:e2e
+```
+
+Si Playwright todavía no tiene instalado Chromium:
+
+```bash
+npx playwright install chromium
+```
+
+## HTTPS Opcional
+
+El contenedor puede servir HTTPS si se montan certificados en `/etc/termincount/certs` con estos nombres:
+
+- `fullchain.pem`
+- `privkey.pem`
+
+Ejemplo:
+
+```bash
+docker run -d \
+  --name termincount \
+  --restart unless-stopped \
   -p 8080:80 \
   -p 8443:443 \
-  -e TERMINCOUNT_DOMAIN=localhost \
-  -v "./certs:/etc/nginx/certs:ro" \
-# Alternative (bind individual files instead of the whole folder):
-# -v "./certs/fullchain.pem:/etc/nginx/certs/fullchain.pem:ro" \
-# -v "./certs/privkey.pem:/etc/nginx/certs/privkey.pem:ro" \
-  termincount:latest
+  -v ./ssl:/etc/termincount/certs:ro \
+  termindiego25/termincount:latest
 ```
 
-#### Docker Compose
-```yaml
-services:
-  web:
-    image: termincount:latest
-    build:
-      context: .
-    ports:
-      - "8080:80"   # HTTP
-      - "8443:443"  # HTTPS
-    environment:
-      - TERMINCOUNT_DOMAIN=localhost
-    volumes:
-      - "./certs:/etc/nginx/certs:ro"
-      # Alternative (bind individual files):
-      # - "./certs/fullchain.pem:/etc/nginx/certs/fullchain.pem:ro"
-      # - "./certs/privkey.pem:/etc/nginx/certs/privkey.pem:ro"
-    restart: unless-stopped
+Cuando ambos certificados están presentes, el contenedor sirve HTTPS y redirige HTTP a HTTPS.
+
+## Tecnología
+
+- [SvelteKit](https://svelte.dev/docs/kit) para estructura de aplicación, rutas y futura evolución hacia backend.
+- [TypeScript](https://www.typescriptlang.org/) para tipado y mantenimiento.
+- [Vite](https://vite.dev/) para desarrollo y build optimizado.
+- [Bootstrap CSS](https://getbootstrap.com/) como dependencia npm gestionada, sin Bootstrap JS.
+- [Playwright](https://playwright.dev/) para pruebas de navegador.
+- Servidor estático mínimo en Go dentro de una imagen Docker `scratch`.
+
+## Estructura
+
+```text
+src/
+  app.html                 Plantilla HTML
+  app.css                  Estilos globales y temas
+  lib/
+    i18n.ts                Traducciones
+    voting.ts              Tipos y helpers de votación
+    server/                Zona reservada para futuro backend
+  routes/
+    +layout.ts             Imports globales y prerender
+    +page.svelte           Interfaz principal
+
+static/
+  images/                  Logo, manifest y favicons
+
+tests/
+  termincount.spec.ts      Pruebas end-to-end
+
+tools/
+  smoke-test.mjs           Checks básicos del proyecto
+  static-server/           Servidor mínimo para Docker
 ```
 
----
+## Licencia
 
-## ⚙️ Configuration
-
-| Variable             | Required | Default  | Description                                                                                  |
-| -------------------- | :------: | -------- | -------------------------------------------------------------------------------------------- |
-| `TERMINCOUNT_DOMAIN` |     ❓    | *localhost* | Passed into Nginx as `server_name`. Set to your domain or `localhost` for local runs.        |
-| `certs` volume       |     ❓    | *(none)* | Mount a folder containing `fullchain.pem` and `privkey.pem` at `/etc/nginx/certs` to enable HTTPS on port 443. Alternatively, you can bind the two files individually. |
-
----
-
-## 🤝 Contributing
-
-Issues and PRs are welcome!
-Please keep changes small and focused.
-When adding new text, update all language dictionaries.
-
----
-
-## 👤 Credits
-
-* Original author: **[Termindiego25](https://www.diegosr.es)**
-
----
-
-## 📜 License
-
-GPL-3.0 — see [LICENSE](LICENSE).
+GPL-3.0. Consulta [LICENSE](LICENSE).

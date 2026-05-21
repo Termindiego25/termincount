@@ -1,26 +1,51 @@
-FROM nginx:1.29.1-alpine-slim
+FROM node:alpine AS build
+
+WORKDIR /app
+
+ARG NPM_VERSION=11.15.0
+
+RUN npm install -g "npm@${NPM_VERSION}"
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+FROM golang:alpine AS static-server
+
+WORKDIR /src
+COPY tools/static-server/main.go .
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/termincount-server ./main.go
+
+FROM scratch
+
+ARG VERSION=1.2.0
+ARG VCS_REF=unknown
+ARG BUILD_DATE=unknown
 
 LABEL org.opencontainers.image.title="TerminCount" \
-      org.opencontainers.image.description="Lightweight vote counter web app" \
-      org.opencontainers.image.url="https://github.com/Termindiego25/termincount" \
+      org.opencontainers.image.description="Lightweight vote counter web app built with SvelteKit" \
+      org.opencontainers.image.authors="Termindiego25" \
+      org.opencontainers.image.vendor="Termindiego25" \
+      org.opencontainers.image.documentation="https://github.com/Termindiego25/termincount#readme" \
+      org.opencontainers.image.url="https://termincount.diegosr.es" \
+      org.opencontainers.image.source="https://github.com/Termindiego25/termincount" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.licenses="GPL-3.0"
 
-# Default domain (can be overridden at runtime with -e DOMAIN=yourdomain.com)
-ENV TERMINCOUNT_DOMAIN=localhost
+ENV PORT=80 \
+    TLS_PORT=443 \
+    STATIC_DIR=/srv/termincount \
+    TERMINCOUNT_DOMAIN=localhost
 
-# Remove default nginx web root and add app files
-RUN rm -rf /usr/share/nginx/html/*
-COPY www /usr/share/nginx/html
+COPY --from=build /app/build /srv/termincount
+COPY --from=static-server /out/termincount-server /termincount-server
 
-# Copy nginx templates and entrypoint script
-COPY nginx-http.conf.template /etc/nginx/templates/nginx-http.conf.template
-COPY nginx-https.conf.template /etc/nginx/templates/nginx-https.conf.template
-COPY entrypoint.sh /entrypoint.sh
-
-# Expose HTTP and HTTPS
 EXPOSE 80 443
 
-# Healthcheck (works even if HTTPS is enabled, because HTTP is always available internally)
-HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD wget -qO- http://127.0.0.1/ || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD ["/termincount-server", "-healthcheck"]
 
-ENTRYPOINT ["/bin/sh", "/entrypoint.sh"]
+ENTRYPOINT ["/termincount-server"]

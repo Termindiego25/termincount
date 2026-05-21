@@ -1,9 +1,11 @@
 .git
 .gitignore
-LICENSE
-README.md
-Dockerfile
-docker-compose.yaml
+.svelte-kit
+build
+node_modules
+playwright-report
+test-results
+coverage
 ssl
 *.env
-deploy.txt
+*.zip

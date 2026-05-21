@@ -1,0 +1,43 @@
+{
+  "name": "termincount",
+  "version": "1.2.0",
+  "private": true,
+  "description": "Lightweight vote counter web app built with SvelteKit.",
+  "author": "Termindiego25",
+  "license": "GPL-3.0",
+  "packageManager": "npm@11.15.0",
+  "homepage": "https://termincount.diegosr.es",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Termindiego25/termincount.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Termindiego25/termincount/issues"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "test": "npm run check && node tools/smoke-test.mjs",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "bootstrap": "5.3.8"
+  },
+  "overrides": {
+    "cookie": "1.1.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.60.0",
+    "@sveltejs/adapter-static": "3.0.10",
+    "@sveltejs/kit": "2.60.1",
+    "@sveltejs/vite-plugin-svelte": "7.1.2",
+    "@types/node": "25.9.1",
+    "svelte": "5.55.9",
+    "svelte-check": "4.4.8",
+    "typescript": "6.0.3",
+    "vite": "8.0.13"
+  }
+}
