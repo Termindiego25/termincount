@@ -22,6 +22,33 @@ test('creates a shareable default count and supports owner shortcuts', async ({ 
 	await expect(page.locator('#slot-1-label')).toHaveText('0');
 });
 
+test('keeps owner tools readable on mobile', async ({ page }) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto('/');
+	await page.getByRole('button', { name: /start counting|pasar a recuento|iniciar recompte/i }).click();
+
+	await expect(page.locator('.owner-tools')).toBeVisible();
+	await expect(page.locator('.share-panel')).toBeVisible();
+
+	const layout = await page.evaluate(() => {
+		const shortcuts = document.querySelector('.shortcut-panel')?.getBoundingClientRect();
+		const share = document.querySelector('.share-panel')?.getBoundingClientRect();
+
+		return {
+			hasHorizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+			stacked:
+				Boolean(shortcuts && share) && Math.round(share!.top) >= Math.round(shortcuts!.bottom) - 1,
+			shareWithinViewport: Boolean(share) && share!.left >= 0 && share!.right <= window.innerWidth + 1
+		};
+	});
+
+	expect(layout).toEqual({
+		hasHorizontalOverflow: false,
+		stacked: true,
+		shareWithinViewport: true
+	});
+});
+
 test('brand link returns to the setup screen', async ({ page }) => {
 	await page.goto('/');
 	await page.locator('#title').fill('Demo count');
