@@ -61,7 +61,9 @@ check(!/data-action="toggle-theme"|data-action="auto-theme"/.test(page), 'Legacy
 check(/data-action="theme-menu"/.test(shell), 'Theme menu trigger should exist.');
 check(/select-shell/.test(shell), 'Language selector should include its visual shell.');
 check(!/innerHTML/.test(source), 'Runtime code should not use innerHTML.');
-check(/2025-2026/.test(i18n), 'Translated footer text should include the 2025-2026 year range.');
+check(/\{yearRange\}/.test(i18n), 'Translated footer text should include the dynamic year range placeholder.');
+check(/copyrightStartYear = 2025/.test(shell), 'Footer copyright should keep 2025 as the start year.');
+check(/new Date\(\)\.getFullYear\(\)/.test(shell), 'Footer copyright should derive the current year automatically.');
 check((css.match(/^:root\s*\{/gm) || []).length === 1, 'app.css should not contain duplicated root blocks.');
 check(/EventSource/.test(pollPage), 'Poll page should use SSE live updates.');
 check(/execCommand\('copy'\)/.test(pollPage), 'Share link copy should include a browser fallback.');

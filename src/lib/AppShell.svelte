@@ -14,6 +14,10 @@
 
 	const languageStorageKey = 'termincount.lang';
 	const themeStorageKey = 'termincount.theme';
+	const copyrightStartYear = 2025;
+	const currentYear = new Date().getFullYear();
+	const copyrightYearRange =
+		currentYear > copyrightStartYear ? `${copyrightStartYear}-${currentYear}` : String(copyrightStartYear);
 
 	let mobileMenuOpen = false;
 	let themeMenuOpen = false;
@@ -81,7 +85,7 @@
 		document.documentElement.setAttribute('data-theme-mode', themeMode);
 		document.getElementById('meta-theme-color')?.setAttribute(
 			'content',
-			resolvedTheme === 'dark' ? '#111827' : '#ffffff'
+			resolvedTheme === 'dark' ? '#0d1117' : '#ffffff'
 		);
 	}
 
@@ -279,7 +283,7 @@
 	</div>
 
 	<footer class="text-center py-3 mt-auto small">
-		<p class="legal-line">{t(currentLang, 'footer')}</p>
+		<p class="legal-line">{t(currentLang, 'footer', { yearRange: copyrightYearRange })}</p>
 		<a
 			href="https://github.com/Termindiego25"
 			target="_blank"

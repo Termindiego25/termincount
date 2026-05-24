@@ -1,23 +1,23 @@
 :root {
 	color-scheme: light dark;
-	--bg: #111827;
-	--surface: #182033;
-	--surface-2: #253044;
-	--text: #eef2f7;
-	--muted: #aab4c3;
-	--brand: #5aa2ff;
-	--brand-strong: #2f7de1;
-	--focus: #7dd3fc;
+	--bg: #0d1117;
+	--surface: #161b22;
+	--surface-2: #30363d;
+	--text: #f0f6fc;
+	--muted: #8b949e;
+	--brand: #58a6ff;
+	--brand-strong: #1f6feb;
+	--focus: #58a6ff;
 	--radius: 8px;
-	--accent1: #60a5fa;
-	--accent2: #34d399;
-	--accent3: #f87171;
-	--accent4: #fbbf24;
-	--accent5: #a78bfa;
-	--accent6: #2dd4bf;
-	--accent7: #f472b6;
-	--accent8: #fb923c;
-	--accent9: #0d6efd;
+	--accent1: #58a6ff;
+	--accent2: #3fb950;
+	--accent3: #f85149;
+	--accent4: #d29922;
+	--accent5: #a371f7;
+	--accent6: #39c5cf;
+	--accent7: #db61a2;
+	--accent8: #f0883e;
+	--accent9: #79c0ff;
 }
 
 html[data-theme="light"] {
@@ -340,7 +340,7 @@ body {
 }
 
 .moon-icon {
-	color: #9aa4ff;
+	color: #8b949e;
 }
 
 .nav {

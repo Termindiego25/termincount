@@ -62,7 +62,7 @@ export const dictionaries: Record<Language, Dictionary> = {
 		'shortcut.heading': 'Atajos',
 		'shortcut.template': "Tecla '{n}' o click en el contador: {label}",
 		'vote.option.aria': 'Registrar voto {n}: {label}',
-		'footer': '© 2025-2026 Diego Sanchis Reig. Todos los derechos reservados.'
+		'footer': '© {yearRange} Diego Sanchis Reig. Todos los derechos reservados.'
 	},
 	ca: {
 		'app.title': 'TerminCount - Recompte de vots',
@@ -115,7 +115,7 @@ export const dictionaries: Record<Language, Dictionary> = {
 		'shortcut.heading': 'Dreceres',
 		'shortcut.template': "Tecla '{n}' o clic al comptador: {label}",
 		'vote.option.aria': 'Registrar vot {n}: {label}',
-		'footer': '© 2025-2026 Diego Sanchis Reig. Tots els drets reservats.'
+		'footer': '© {yearRange} Diego Sanchis Reig. Tots els drets reservats.'
 	},
 	gl: {
 		'app.title': 'TerminCount - Reconto de votos',
@@ -168,7 +168,7 @@ export const dictionaries: Record<Language, Dictionary> = {
 		'shortcut.heading': 'Atallos',
 		'shortcut.template': "Tecla '{n}' ou clic no contador: {label}",
 		'vote.option.aria': 'Rexistrar voto {n}: {label}',
-		'footer': '© 2025-2026 Diego Sanchis Reig. Todos os dereitos reservados.'
+		'footer': '© {yearRange} Diego Sanchis Reig. Todos os dereitos reservados.'
 	},
 	eu: {
 		'app.title': 'TerminCount - Botoen zenbaketa',
@@ -221,7 +221,7 @@ export const dictionaries: Record<Language, Dictionary> = {
 		'shortcut.heading': 'Laster-teklak',
 		'shortcut.template': "'{n}' tekla edo egin klik kontagailuan: {label}",
 		'vote.option.aria': 'Botoa erregistratu {n}: {label}',
-		'footer': '© 2025-2026 Diego Sanchis Reig. Eskubide guztiak erreserbatuta.'
+		'footer': '© {yearRange} Diego Sanchis Reig. Eskubide guztiak erreserbatuta.'
 	},
 	en: {
 		'app.title': 'TerminCount - Vote Count',
@@ -274,7 +274,7 @@ export const dictionaries: Record<Language, Dictionary> = {
 		'shortcut.heading': 'Shortcuts',
 		'shortcut.template': "Key '{n}' or click on the counter: {label}",
 		'vote.option.aria': 'Record vote {n}: {label}',
-		'footer': '© 2025-2026 Diego Sanchis Reig. All rights reserved.'
+		'footer': '© {yearRange} Diego Sanchis Reig. All rights reserved.'
 	}
 };
 
