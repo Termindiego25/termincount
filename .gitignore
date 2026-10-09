@@ -8,5 +8,9 @@ data/
 secrets/credentials/*.txt
 ssl/
 *.env
+.env*
+!.env.example
+backups/
+artifacts/
 *.zip
 deploy.txt

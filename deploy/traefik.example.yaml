@@ -1,0 +1,30 @@
+http:
+  routers:
+    termincount:
+      entryPoints:
+        - websecure
+      rule: "Host(`termincount.example.com`)"
+      service: termincount
+      tls: {}
+    termincount-writes:
+      entryPoints:
+        - websecure
+      rule: "Host(`termincount.example.com`) && PathPrefix(`/api/polls`) && Method(`POST`)"
+      service: termincount
+      middlewares:
+        - termincount-write-limit
+      tls: {}
+
+  middlewares:
+    termincount-write-limit:
+      rateLimit:
+        average: 10
+        burst: 40
+
+  services:
+    termincount:
+      loadBalancer:
+        responseForwarding:
+          flushInterval: -1ms
+        servers:
+          - url: "http://termincount:3000"

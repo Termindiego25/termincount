@@ -1,7 +1,11 @@
-import { ensureDatabase } from '$lib/server/db';
+import { checkDatabase } from '$lib/server/db';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async () => {
-	await ensureDatabase();
-	return new Response(null, { status: 204 });
+	try {
+		await checkDatabase();
+		return new Response(null, { status: 204 });
+	} catch {
+		return new Response(null, { status: 503 });
+	}
 };

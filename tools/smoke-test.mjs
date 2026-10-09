@@ -34,7 +34,9 @@ const composeEnvExample = await readFile(fromRoot('termincount.env.example'), 'u
 const manifest = JSON.parse(await readFile(fromRoot('static', 'images', 'favicon', 'manifest.json'), 'utf8'));
 const source = [appHtml, page, shell, pollPage, i18n, voting, css].join('\n');
 
-check(packageJson.version === '1.3.0', 'package.json version should be 1.3.0.');
+const lock = JSON.parse(await readFile(fromRoot('package-lock.json'), 'utf8'));
+check(lock.version === packageJson.version, 'Lockfile and package versions should match.');
+check(dockerfile.includes(`ARG VERSION=${packageJson.version}`), 'Docker and package versions should match.');
 check(Boolean(packageJson.devDependencies?.['@sveltejs/kit']), 'SvelteKit should be installed.');
 check(Boolean(packageJson.devDependencies?.['@sveltejs/adapter-node']), 'SvelteKit adapter-node should be installed.');
 check(!packageJson.devDependencies?.['@sveltejs/adapter-static'], 'SvelteKit adapter-static should not be installed.');
@@ -45,7 +47,7 @@ check(Boolean(packageJson.dependencies?.pg), 'PostgreSQL client should be instal
 check(Boolean(packageJson.dependencies?.qrcode), 'QR code generation should be installed.');
 check(Boolean(packageJson.author), 'package.json should include author metadata.');
 check(packageJson.license === 'GPL-3.0', 'package.json should include GPL-3.0 license metadata.');
-check(packageJson.packageManager === 'npm@11.15.0', 'package.json should pin the npm package manager version.');
+check(dockerfile.includes(`ARG NPM_VERSION=${packageJson.packageManager.replace('npm@', '')}`), 'Docker and package npm versions should match.');
 
 check(!/code\.jquery\.com|jquery-3|window\.jQuery/i.test(source), 'jQuery should not be used.');
 check(!/bootstrap(?:\.bundle)?\.min\.js/i.test(source), 'Bootstrap JavaScript should not be loaded.');
@@ -80,7 +82,6 @@ for (const icon of manifest.icons || []) {
 
 check(/FROM --platform=\$BUILDPLATFORM node:22-alpine AS base/.test(dockerfile), 'Dockerfile should use Node 22 Alpine for multi-arch builds.');
 check(/FROM node:22-alpine AS runtime-base/.test(dockerfile), 'Dockerfile should use a target-platform Node runtime base.');
-check(/ARG NPM_VERSION=11\.15\.0/.test(dockerfile), 'Dockerfile should pin the current npm version in the build stage.');
 check(/FROM scratch AS runtime/.test(dockerfile), 'Dockerfile should use a minimal scratch runtime image.');
 check(/COPY --from=runtime-base \/usr\/local\/bin\/node \/usr\/local\/bin\/node/.test(dockerfile), 'Dockerfile should copy the target-platform Node runtime into the final image.');
 check(/COPY --from=build \/app\/build \.\/build/.test(dockerfile), 'Dockerfile should copy the SvelteKit server build output.');
@@ -95,7 +96,7 @@ check(!/container_name:/.test(compose), 'Docker Compose should not pin container
 check(/POSTGRES_PASSWORD_FILE: \/run\/secrets\/db_password/.test(compose), 'Docker Compose should pass the PostgreSQL password through Docker Secrets.');
 check(/DB_PASSWORD_FILE: \/run\/secrets\/db_password/.test(compose), 'Docker Compose should pass the app database password through Docker Secrets.');
 check(/\.\/data\/postgres:\/var\/lib\/postgresql/.test(compose), 'Docker Compose should store PostgreSQL data in the project data folder.');
-check(/\$\{TERMINCOUNT_PORT:-8080\}:3000/.test(compose), 'Docker Compose should map the host app port to the non-privileged container port.');
+check(/127\.0\.0\.1:\$\{TERMINCOUNT_PORT:-8080\}:3000/.test(compose), 'Docker Compose should bind the app port to loopback.');
 check(/DB_HOST: db/.test(compose), 'Docker Compose should wire the app to the PostgreSQL service.');
 check(/ORIGIN=http:\/\/localhost:8080/.test(composeEnvExample), 'TerminCount env example should include a local ORIGIN.');
 check(

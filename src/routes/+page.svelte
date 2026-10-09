@@ -82,6 +82,7 @@
 					class="form-control"
 					placeholder={t(currentLang, 'ph.title')}
 					autocomplete="off"
+					maxlength="140"
 					bind:value={title}
 				/>
 			</div>
@@ -94,6 +95,7 @@
 						id={`o${index + 1}`}
 						class="form-control my-2"
 						placeholder={t(currentLang, 'ph.option', { n: index + 1 })}
+						aria-label={t(currentLang, 'ph.option', { n: index + 1 })}
 						autocomplete="off"
 						maxlength="80"
 						value={option}

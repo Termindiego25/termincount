@@ -12,6 +12,7 @@ export interface PollOptionResult {
 export interface PollResult {
 	id: string;
 	title: string;
+	revision: string;
 	language: Language;
 	isDefault: boolean;
 	createdAt: string;

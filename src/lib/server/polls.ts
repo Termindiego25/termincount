@@ -11,8 +11,7 @@ import {
 	type Poll
 } from '$lib/voting';
 import { getRetentionDays } from './config';
-import { ensureDatabase, pool } from './db';
-import { publishPollUpdate } from './realtime';
+import { ensureDatabase, pool, POLL_UPDATE_CHANNEL } from './db';
 
 const titleMaxLength = 140;
 const optionMaxLength = 80;
@@ -28,6 +27,7 @@ interface PollRow {
 	created_at: Date | string;
 	expires_at: Date | string;
 	owner_session_hash: string;
+	last_event_id: string;
 }
 
 interface OptionRow {
@@ -44,7 +44,7 @@ export interface PollSnapshot {
 }
 
 export function normalizeCreatePollPayload(input: unknown): CreatePollPayload {
-	if (!input || typeof input !== 'object') {
+	if (!input || typeof input !== 'object' || Array.isArray(input)) {
 		error(400, 'Invalid poll payload.');
 	}
 
@@ -53,12 +53,14 @@ export function normalizeCreatePollPayload(input: unknown): CreatePollPayload {
 		? payload.language
 		: 'en';
 
-	const options = Array.isArray(payload.options)
-		? payload.options
-				.map((option) => String(option ?? '').trim().slice(0, optionMaxLength))
-				.filter(Boolean)
-				.slice(0, MAX_OPTIONS)
-		: [];
+	if (payload.title != null && typeof payload.title !== 'string') error(400, 'Invalid poll title.');
+	if (payload.options != null && (!Array.isArray(payload.options) || payload.options.length > MAX_OPTIONS)) {
+		error(400, 'Invalid poll options.');
+	}
+	const options = (payload.options as unknown[] | undefined ?? []).map((option) => {
+		if (typeof option !== 'string') error(400, 'Invalid poll option.');
+		return option.trim().slice(0, optionMaxLength);
+	}).filter(Boolean);
 
 	return {
 		title: String(payload.title ?? '').trim().slice(0, titleMaxLength),
@@ -72,6 +74,7 @@ export async function createPoll(payload: CreatePollPayload, ownerSessionHash: s
 
 	const customPoll = createCustomPoll(payload.title, payload.options, payload.language);
 	const poll = customPoll.slots.length > 0 ? customPoll : createDefaultPoll(payload.language);
+	if (payload.title.trim()) poll.question = customPoll.question;
 	const isDefault = poll.slots.length !== customPoll.slots.length;
 	const expiresAt = new Date(Date.now() + getRetentionDays() * 24 * 60 * 60 * 1000);
 
@@ -90,13 +93,12 @@ export async function createPoll(payload: CreatePollPayload, ownerSessionHash: s
 			);
 
 			await insertOptions(client, id, poll);
-			await client.query('COMMIT');
-
-			const created = await getPoll(id);
+			const created = await readPoll(client, id);
 			if (!created) error(500, 'Created poll could not be loaded.');
+			await client.query('COMMIT');
 			return created.poll;
 		} catch (caught) {
-			await client.query('ROLLBACK');
+			await client.query('ROLLBACK').catch(() => {});
 
 			if (isUniqueViolation(caught)) {
 				continue;
@@ -125,12 +127,24 @@ async function insertOptions(client: pg.PoolClient, pollId: string, poll: Poll) 
 
 export async function getPoll(id: string): Promise<PollSnapshot | null> {
 	await ensureDatabase();
-	const pollResult = await pool.query<PollRow>('SELECT * FROM polls WHERE id = $1 AND expires_at > now()', [id]);
+	return readPoll(pool, id);
+}
+
+async function readPoll(queryable: Queryable, id: string): Promise<PollSnapshot | null> {
+	const pollResult = await queryable.query<PollRow & { options: OptionRow[] }>(`
+		SELECT p.*, (
+			SELECT COALESCE(json_agg(json_build_object(
+				'id', id::text, 'position', position, 'label', label, 'bar_type', bar_type, 'votes', votes
+			) ORDER BY position), '[]'::json)
+			FROM poll_options WHERE poll_id = p.id
+		) AS options
+		FROM polls p WHERE id = $1 AND expires_at > now()
+	`, [id]);
 	const row = pollResult.rows[0];
 	if (!row) return null;
 
 	return {
-		poll: await serializePoll(row, pool),
+		poll: serializePoll(row, row.options),
 		ownerSessionHash: row.owner_session_hash
 	};
 }
@@ -153,12 +167,11 @@ export async function recordVote(id: string, index: number, ownerSessionHash: st
 		await client.query('INSERT INTO vote_events (poll_id, option_id) VALUES ($1, $2)', [id, optionRow.id]);
 		await client.query('UPDATE poll_options SET votes = votes + 1 WHERE id = $1', [optionRow.id]);
 		await client.query('UPDATE polls SET last_event_id = last_event_id + 1 WHERE id = $1', [id]);
+		const result = await finishMutation(client, id, poll.owner_session_hash);
 		await client.query('COMMIT');
-
-		await publishPollUpdate(id);
-		return await loadRequiredPoll(id, poll.owner_session_hash);
+		return result;
 	} catch (caught) {
-		await client.query('ROLLBACK');
+		await client.query('ROLLBACK').catch(() => {});
 		throw caught;
 	} finally {
 		client.release();
@@ -186,8 +199,10 @@ export async function undoLastVote(id: string, ownerSessionHash: string): Promis
 
 		const event = latest.rows[0];
 		if (!event) {
+			const snapshot = await readPoll(client, id);
+			if (!snapshot) error(404, 'Poll not found.');
 			await client.query('COMMIT');
-			return await loadRequiredPoll(id, poll.owner_session_hash);
+			return snapshot.poll;
 		}
 
 		await client.query('DELETE FROM vote_events WHERE id = $1', [event.id]);
@@ -195,12 +210,11 @@ export async function undoLastVote(id: string, ownerSessionHash: string): Promis
 			event.option_id
 		]);
 		await client.query('UPDATE polls SET last_event_id = last_event_id + 1 WHERE id = $1', [id]);
+		const result = await finishMutation(client, id, poll.owner_session_hash);
 		await client.query('COMMIT');
-
-		await publishPollUpdate(id);
-		return await loadRequiredPoll(id, poll.owner_session_hash);
+		return result;
 	} catch (caught) {
-		await client.query('ROLLBACK');
+		await client.query('ROLLBACK').catch(() => {});
 		throw caught;
 	} finally {
 		client.release();
@@ -224,31 +238,23 @@ async function requireOwnedPoll(
 	return poll;
 }
 
-async function loadRequiredPoll(id: string, expectedOwnerHash: string): Promise<PollResult> {
-	const snapshot = await getPoll(id);
+async function finishMutation(client: pg.PoolClient, id: string, expectedOwnerHash: string): Promise<PollResult> {
+	const snapshot = await readPoll(client, id);
 	if (!snapshot || snapshot.ownerSessionHash !== expectedOwnerHash) error(404, 'Poll not found.');
+	await client.query('SELECT pg_notify($1, $2)', [POLL_UPDATE_CHANNEL, id]);
 	return snapshot.poll;
 }
 
-async function serializePoll(row: PollRow, queryable: Queryable): Promise<PollResult> {
-	const options = await queryable.query<OptionRow>(
-		`
-			SELECT id, position, label, bar_type, votes
-			FROM poll_options
-			WHERE poll_id = $1
-			ORDER BY position ASC
-		`,
-		[row.id]
-	);
-
+function serializePoll(row: PollRow, options: OptionRow[]): PollResult {
 	return {
 		id: row.id,
 		title: row.title,
+		revision: String(row.last_event_id),
 		language: row.language,
 		isDefault: row.is_default,
 		createdAt: new Date(row.created_at).toISOString(),
 		expiresAt: new Date(row.expires_at).toISOString(),
-		options: options.rows.map(serializeOption)
+		options: options.map(serializeOption)
 	};
 }
 

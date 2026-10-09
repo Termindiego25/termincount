@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
 
-const defaultDatabaseUrl = 'postgres://termincount:termincount@127.0.0.1:5432/termincount';
 const defaultRetentionDays = 7;
 
 export function getDatabaseUrl(): string {
@@ -13,9 +12,8 @@ export function getDatabaseUrl(): string {
 	const username = readEnvOrFile('DB_USER') || readEnvOrFile('POSTGRES_USER') || 'termincount';
 	const password = readEnvOrFile('DB_PASSWORD') || readEnvOrFile('POSTGRES_PASSWORD') || 'termincount';
 
-	if (!host && !database && !username && !password) return defaultDatabaseUrl;
-
-	return `postgres://${encodeURIComponent(username)}:${encodeURIComponent(password)}@${host}:${port}/${encodeURIComponent(database)}`;
+	const authority = host.includes(':') && !host.startsWith('[') ? `[${host}]` : host;
+	return `postgres://${encodeURIComponent(username)}:${encodeURIComponent(password)}@${authority}:${port}/${encodeURIComponent(database)}`;
 }
 
 export function getRetentionDays(): number {
@@ -28,6 +26,14 @@ export function getCleanupIntervalMinutes(): number {
 	const raw = Number.parseInt(process.env.TERMINCOUNT_CLEANUP_INTERVAL_MINUTES || '', 10);
 	if (!Number.isFinite(raw)) return 60;
 	return Math.min(1440, Math.max(5, raw));
+}
+
+export function getDatabasePoolSize(): number {
+	const raw = Number(process.env.TERMINCOUNT_DB_POOL_SIZE || '10');
+	if (!Number.isInteger(raw) || raw < 1 || raw > 100) {
+		throw new Error('TERMINCOUNT_DB_POOL_SIZE must be an integer between 1 and 100.');
+	}
+	return raw;
 }
 
 function readEnvOrFile(name: string): string | undefined {

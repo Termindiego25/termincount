@@ -4,7 +4,7 @@ FROM --platform=$BUILDPLATFORM node:22-alpine AS base
 
 WORKDIR /app
 
-ARG NPM_VERSION=11.15.0
+ARG NPM_VERSION=11.21.0
 RUN npm install -g "npm@${NPM_VERSION}"
 
 FROM base AS dependencies
@@ -30,7 +30,7 @@ FROM scratch AS runtime
 
 WORKDIR /app
 
-ARG VERSION=1.3.0
+ARG VERSION=1.3.1
 ARG VCS_REF=unknown
 ARG BUILD_DATE=unknown
 
@@ -50,6 +50,7 @@ ENV NODE_ENV=production \
     HOST=0.0.0.0 \
     PORT=3000 \
     SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
+    BODY_SIZE_LIMIT=16K \
     TERMINCOUNT_RETENTION_DAYS=7 \
     TERMINCOUNT_CLEANUP_INTERVAL_MINUTES=60
 
@@ -66,6 +67,6 @@ EXPOSE 3000
 
 USER 10001:10001
 
-HEALTHCHECK --interval=30s --timeout=5s --retries=5 CMD ["/usr/local/bin/node", "-e", "fetch(`http://127.0.0.1:${process.env.PORT || 80}/healthz`).then((r)=>process.exit(r.status===204?0:1)).catch(()=>process.exit(1))"]
+HEALTHCHECK --interval=30s --timeout=8s --start-period=20s --retries=3 CMD ["/usr/local/bin/node", "-e", "fetch(`http://127.0.0.1:${process.env.PORT || 3000}/healthz`, { signal: AbortSignal.timeout(7000) }).then((r)=>process.exit(r.status===204?0:1)).catch(()=>process.exit(1))"]
 
 CMD ["/usr/local/bin/node", "build"]

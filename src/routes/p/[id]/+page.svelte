@@ -20,12 +20,14 @@
 	let flashIndex: number | null = null;
 	let flashTimer: number | undefined;
 	let now = Date.now();
+	let expiredFromServer = false;
 	let clockTimer: number | undefined;
 	let shareInput: HTMLInputElement | undefined;
+	let actionQueue = Promise.resolve();
 
 	$: pageTitle = `${poll.title} - TerminCount`;
 	$: totalVotes = totalVotesFor(poll);
-	$: expired = isPollExpired(poll, now);
+	$: expired = expiredFromServer || isPollExpired(poll, now);
 	$: expiresLabel = new Intl.DateTimeFormat(currentLang, {
 		dateStyle: 'medium',
 		timeStyle: 'short'
@@ -45,6 +47,14 @@
 		});
 	}
 
+	function applySnapshot(next: PollResult) {
+		if (BigInt(next.revision) >= BigInt(poll.revision)) poll = next;
+	}
+
+	function enqueueAction(action: () => Promise<void>) {
+		actionQueue = actionQueue.then(action);
+	}
+
 	async function vote(index: number) {
 		if (!canManage || expired) return;
 		actionError = '';
@@ -57,7 +67,7 @@
 			});
 			if (!response.ok) throw new Error(`Vote failed with ${response.status}`);
 			const result = (await response.json()) as { poll: PollResult };
-			poll = result.poll;
+			applySnapshot(result.poll);
 			flash(index);
 		} catch {
 			actionError = t(currentLang, 'error.vote');
@@ -65,7 +75,7 @@
 	}
 
 	function handleVoteClick(index: number, event: MouseEvent) {
-		void vote(index);
+		enqueueAction(() => vote(index));
 		releasePointerFocus(event);
 	}
 
@@ -81,7 +91,7 @@
 				const next = result.poll.options[index];
 				return next && next.votes !== option.votes;
 			});
-			poll = result.poll;
+			applySnapshot(result.poll);
 			if (changedIndex >= 0) flash(changedIndex);
 		} catch {
 			actionError = t(currentLang, 'error.vote');
@@ -89,7 +99,7 @@
 	}
 
 	function handleUndoClick(event: MouseEvent) {
-		void undoLastVote();
+		enqueueAction(undoLastVote);
 		releasePointerFocus(event);
 	}
 
@@ -110,18 +120,18 @@
 	}
 
 	function handleGlobalKeydown(event: KeyboardEvent) {
-		if (!canManage || expired || event.defaultPrevented || shouldIgnoreShortcutTarget(event.target)) return;
+		if (!canManage || expired || event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey || shouldIgnoreShortcutTarget(event.target)) return;
 
 		if (event.key === 'r' || event.key === 'R') {
 			event.preventDefault();
-			void undoLastVote();
+			enqueueAction(undoLastVote);
 			return;
 		}
 
 		const numeric = Number.parseInt(event.key, 10);
 		if (Number.isInteger(numeric) && numeric >= 1 && numeric <= poll.options.length) {
 			event.preventDefault();
-			void vote(numeric - 1);
+			enqueueAction(() => vote(numeric - 1));
 		}
 	}
 
@@ -192,32 +202,50 @@
 				width: 184
 			}).then((url) => {
 				qrDataUrl = url;
-			});
+			}).catch(() => { qrDataUrl = ''; });
 		}
 
-		const events = new EventSource(`/api/polls/${poll.id}/events`);
-		events.addEventListener('open', () => {
-			liveState = 'connected';
-		});
-		events.addEventListener('poll', (event) => {
-			liveState = 'connected';
-			poll = JSON.parse((event as MessageEvent).data) as PollResult;
-		});
-		events.addEventListener('expired', () => {
-			now = Date.now();
-			liveState = 'disconnected';
-			events.close();
-		});
-		events.addEventListener('error', () => {
-			liveState = 'disconnected';
-		});
+		let events: EventSource | undefined;
+		let reconnectTimer: number | undefined;
+		let reconnectDelay = 3000;
+		let disposed = false;
+		const connect = () => {
+			if (disposed || expired) return;
+			const connection = new EventSource(`/api/polls/${poll.id}/events`);
+			events = connection;
+			connection.addEventListener('open', () => {
+				liveState = 'connected';
+				reconnectDelay = 3000;
+			});
+			connection.addEventListener('poll', (event) => {
+				liveState = 'connected';
+				applySnapshot(JSON.parse((event as MessageEvent).data) as PollResult);
+			});
+			connection.addEventListener('expired', () => {
+				expiredFromServer = true;
+				liveState = 'disconnected';
+				connection.close();
+			});
+			connection.addEventListener('error', () => {
+				liveState = 'disconnected';
+				// HTTP errors can permanently close EventSource instead of triggering its native retry.
+				if (connection.readyState === EventSource.CLOSED && !disposed) {
+					if (reconnectTimer) window.clearTimeout(reconnectTimer);
+					reconnectTimer = window.setTimeout(connect, reconnectDelay);
+					reconnectDelay = Math.min(reconnectDelay * 2, 30_000);
+				}
+			});
+		};
+		connect();
 
 		clockTimer = window.setInterval(() => {
 			now = Date.now();
 		}, 30_000);
 
 		return () => {
-			events.close();
+			disposed = true;
+			events?.close();
+			if (reconnectTimer) window.clearTimeout(reconnectTimer);
 			if (clockTimer) window.clearInterval(clockTimer);
 			if (flashTimer) window.clearTimeout(flashTimer);
 		};

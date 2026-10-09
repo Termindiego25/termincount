@@ -10,4 +10,7 @@ data
 secrets
 ssl
 *.env
+.env*
+backups
+artifacts
 *.zip

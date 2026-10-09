@@ -1,13 +1,18 @@
 import pg from 'pg';
-import { getCleanupIntervalMinutes, getDatabaseUrl } from './config';
+import { getCleanupIntervalMinutes, getDatabasePoolSize, getDatabaseUrl } from './config';
 
 const { Pool } = pg;
+export const POLL_UPDATE_CHANNEL = 'termincount_poll_updates';
 
 export const pool = new Pool({
 	connectionString: getDatabaseUrl(),
-	max: Number.parseInt(process.env.TERMINCOUNT_DB_POOL_SIZE || '10', 10),
+	max: getDatabasePoolSize(),
 	idleTimeoutMillis: 30_000,
 	connectionTimeoutMillis: 5_000
+});
+
+pool.on('error', (error) => {
+	console.error('Idle PostgreSQL connection failed', error.message);
 });
 
 let initPromise: Promise<void> | null = null;
@@ -15,14 +20,22 @@ let cleanupTimer: NodeJS.Timeout | null = null;
 
 export async function ensureDatabase(): Promise<void> {
 	if (!initPromise) {
-		initPromise = initializeDatabase();
+		initPromise = initializeDatabase().catch((error) => {
+			initPromise = null;
+			throw error;
+		});
 	}
 
 	return initPromise;
 }
 
 async function initializeDatabase(): Promise<void> {
-	await pool.query(`
+	const client = await pool.connect();
+	try {
+		await client.query('BEGIN');
+		// Serialize first-start schema creation across app replicas.
+		await client.query('SELECT pg_advisory_xact_lock(2025, 1300)');
+		await client.query(`
 		CREATE TABLE IF NOT EXISTS polls (
 			id text PRIMARY KEY,
 			title text NOT NULL,
@@ -54,7 +67,14 @@ async function initializeDatabase(): Promise<void> {
 		CREATE INDEX IF NOT EXISTS idx_polls_expires_at ON polls (expires_at);
 		CREATE INDEX IF NOT EXISTS idx_poll_options_poll_position ON poll_options (poll_id, position);
 		CREATE INDEX IF NOT EXISTS idx_vote_events_poll_created ON vote_events (poll_id, id DESC);
-	`);
+		`);
+		await client.query('COMMIT');
+	} catch (error) {
+		await client.query('ROLLBACK').catch(() => {});
+		throw error;
+	} finally {
+		client.release();
+	}
 
 	await cleanupExpiredPolls();
 	startCleanupLoop();
@@ -73,6 +93,11 @@ function startCleanupLoop() {
 	);
 
 	cleanupTimer.unref?.();
+}
+
+export async function checkDatabase(): Promise<void> {
+	await ensureDatabase();
+	await pool.query('SELECT 1');
 }
 
 export async function cleanupExpiredPolls(): Promise<number> {

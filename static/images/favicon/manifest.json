@@ -1,5 +1,12 @@
 {
- "name": "App",
+ "name": "TerminCount",
+ "short_name": "TerminCount",
+ "description": "Temporary, shareable live vote counts.",
+ "start_url": "/",
+ "scope": "/",
+ "display": "standalone",
+ "background_color": "#0d1117",
+ "theme_color": "#0d1117",
  "icons": [
   {
    "src": "\/images\/favicon\/android-icon-36x36.png",
