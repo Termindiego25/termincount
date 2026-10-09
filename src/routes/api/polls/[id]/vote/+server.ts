@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { recordVote } from '#lib/server/polls.js';
-import { assertSameOrigin, readJsonBody } from '#lib/server/security.js';
+import { assertSameOrigin, getMutationKey, readJsonBody } from '#lib/server/security.js';
 import { getSessionHash } from '#lib/server/session.js';
 import type { RequestHandler } from './$types';
 
@@ -16,6 +16,6 @@ export const POST: RequestHandler = async (event) => {
 		error(400, 'Invalid vote option.');
 	}
 
-	const poll = await recordVote(event.params.id, index, sessionHash);
+	const poll = await recordVote(event.params.id, index, sessionHash, getMutationKey(event.request));
 	return Response.json({ poll });
 };

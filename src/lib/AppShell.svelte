@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/env';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import {
 		detectLanguage,
 		languages,
@@ -21,6 +21,9 @@
 
 	let mobileMenuOpen = false;
 	let themeMenuOpen = false;
+	let themeTrigger: HTMLButtonElement | undefined;
+	let themePanel: HTMLDivElement | undefined;
+	let mobileTrigger: HTMLButtonElement | undefined;
 	let themeMode: ThemeMode = 'auto';
 	let resolvedTheme: ResolvedTheme = 'light';
 	let prefersDark: MediaQueryList | null = null;
@@ -98,6 +101,7 @@
 		}
 		applyTheme(mode);
 		themeMenuOpen = false;
+		themeTrigger?.focus();
 	}
 
 	function toggleMobileMenu() {
@@ -108,19 +112,47 @@
 		mobileMenuOpen = false;
 	}
 
-	function toggleThemeMenu() {
+	async function toggleThemeMenu() {
 		themeMenuOpen = !themeMenuOpen;
+		if (themeMenuOpen) {
+			await tick();
+			themePanel?.querySelector<HTMLButtonElement>('[aria-checked="true"]')?.focus();
+		}
+	}
+
+	function handleThemeKeys(event: KeyboardEvent) {
+		const choices = Array.from(themePanel?.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]') ?? []);
+		const index = choices.indexOf(document.activeElement as HTMLButtonElement);
+		let next = index;
+		if (event.key === 'ArrowDown') next = (index + 1) % choices.length;
+		else if (event.key === 'ArrowUp') next = (index + choices.length - 1) % choices.length;
+		else if (event.key === 'Home') next = 0;
+		else if (event.key === 'End') next = choices.length - 1;
+		else if (event.key === 'Tab') {
+			themeMenuOpen = false;
+			themeTrigger?.focus();
+			return;
+		} else return;
+		event.preventDefault();
+		choices[next]?.focus();
 	}
 
 	function handleWindowClick(event: MouseEvent) {
-		if (!(event.target instanceof HTMLElement)) return;
+		if (!(event.target instanceof Element)) return;
 		if (!event.target.closest('.theme-menu')) themeMenuOpen = false;
 	}
 
 	function handleEscape(event: KeyboardEvent) {
 		if (event.key !== 'Escape') return;
-		themeMenuOpen = false;
-		closeMobileMenu();
+		if (themeMenuOpen) {
+			themeMenuOpen = false;
+			themeTrigger?.focus();
+			event.preventDefault();
+		} else if (mobileMenuOpen) {
+			closeMobileMenu();
+			mobileTrigger?.focus();
+			event.preventDefault();
+		}
 	}
 
 	onMount(() => {
@@ -155,6 +187,7 @@
 
 			<nav class="nav" aria-label={t(currentLang, 'nav.primary')}>
 				<button
+					bind:this={mobileTrigger}
 					class="menu-toggle"
 					type="button"
 					aria-controls="primary-nav"
@@ -206,6 +239,7 @@
 
 						<div class="theme-menu">
 							<button
+								bind:this={themeTrigger}
 								class="btn btn-ghost small theme-menu-toggle"
 								type="button"
 								data-action="theme-menu"
@@ -227,7 +261,7 @@
 								</svg>
 							</button>
 
-							<div id="theme-menu-panel" class="theme-menu-panel" role="menu" hidden={!themeMenuOpen}>
+							<div bind:this={themePanel} id="theme-menu-panel" class="theme-menu-panel" role="menu" tabindex="-1" aria-label={t(currentLang, 'theme.menu')} hidden={!themeMenuOpen} onkeydown={handleThemeKeys}>
 								<button
 									class="theme-option"
 									class:active={themeMode === 'auto'}

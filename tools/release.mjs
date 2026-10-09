@@ -5,9 +5,13 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const pkg = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
-const allowed = new Set(['--push', '--check']);
+const allowed = new Set(['--push', '--check', '--database']);
 const args = process.argv.slice(2);
-if (args.some((arg) => !allowed.has(arg)) || args.length > 1) throw new Error('Usage: npm run release -- [--check|--push]');
+if (args.some((arg) => !allowed.has(arg)) || new Set(args).size !== args.length || (args.includes('--push') && args.includes('--check'))) {
+	throw new Error('Usage: npm run release -- [--database] [--check|--push]');
+}
+const database = args.includes('--database');
+const artifact = database ? `postgres-18.6-${pkg.version}` : pkg.version;
 
 function run(command, arguments_, capture = false) {
 	const result = spawnSync(command, arguments_, {
@@ -24,18 +28,19 @@ const revision = run('git', ['rev-parse', 'HEAD'], true);
 const builder = process.env.TERMINCOUNT_BUILDER || 'termincount-builder-node26';
 const platforms = process.env.TERMINCOUNT_PLATFORMS || 'linux/amd64,linux/arm64';
 const repository = 'termindiego25/termincount';
-const tags = [pkg.version, pkg.version.split('.').slice(0, 2).join('.'), 'latest'];
+const tags = database ? [artifact, 'postgres-18.6'] : [pkg.version, pkg.version.split('.').slice(0, 2).join('.'), 'latest'];
 run('docker', ['buildx', 'inspect', builder, '--bootstrap']);
 await mkdir(path.join(root, 'artifacts'), { recursive: true });
 const buildArgs = [
 	'buildx', 'build', '--builder', builder, '--platform', platforms, '--pull',
-	'--no-cache-filter', 'base,runtime-base',
+	...(database ? ['--no-cache'] : ['--no-cache-filter', 'base,runtime-base']),
+	...(database ? ['--file', 'deploy/postgres/Dockerfile'] : []),
 	'--build-arg', `VERSION=${pkg.version}`, '--build-arg', `VCS_REF=${revision}`,
 	'--build-arg', `BUILD_DATE=${new Date().toISOString()}`,
 	'--sbom=true', '--provenance=mode=max',
-	'--annotation', `index:org.opencontainers.image.version=${pkg.version}`,
+	'--annotation', `index:org.opencontainers.image.version=${database ? '18.6' : pkg.version}`,
 	'--annotation', `index:org.opencontainers.image.revision=${revision}`,
-	'--metadata-file', `artifacts/release-${pkg.version}.json`,
+	'--metadata-file', `artifacts/release-${artifact}.json`,
 	...tags.flatMap((tag) => ['--tag', `${repository}:${tag}`])
 ];
 if (args.includes('--push')) {
@@ -43,6 +48,6 @@ if (args.includes('--push')) {
 	if (taggedRevision !== revision) throw new Error(`Tag v${pkg.version} must point to HEAD before publication.`);
 	buildArgs.push('--push');
 } else if (args.includes('--check')) buildArgs.push('--output=type=cacheonly');
-else buildArgs.push('--output', `type=oci,dest=artifacts/termincount-${pkg.version}.oci.tar`);
+else buildArgs.push('--output', `type=oci,dest=artifacts/termincount-${artifact}.oci.tar`);
 run('docker', [...buildArgs, '.']);
-console.log(args.includes('--push') ? `Published ${repository}:${pkg.version} (${revision})` : `Verified ${pkg.version}. Docker Hub was not changed.`);
+console.log(args.includes('--push') ? `Published ${repository}:${artifact} (${revision})` : `Verified ${artifact}. Docker Hub was not changed.`);

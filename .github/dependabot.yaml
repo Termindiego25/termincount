@@ -5,6 +5,11 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    # The active compiler is @typescript/native (TypeScript 7).
+    # Keep TypeScript 6's JS API bridge until Svelte's consumers migrate it.
+    ignore:
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -15,5 +20,9 @@ updates:
       interval: weekly
   - package-ecosystem: docker
     directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /deploy/postgres
     schedule:
       interval: weekly

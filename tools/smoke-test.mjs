@@ -25,7 +25,7 @@ const appHtml = await readFile(fromRoot('src', 'app.html'), 'utf8');
 const svelteConfig = await readFile(fromRoot('vite.config.ts'), 'utf8');
 const page = await readFile(fromRoot('src', 'routes', '+page.svelte'), 'utf8');
 const shell = await readFile(fromRoot('src', 'lib', 'AppShell.svelte'), 'utf8');
-const pollPage = await readFile(fromRoot('src', 'routes', 'p', '[id]', '+page.svelte'), 'utf8');
+const pollPage = await readFile(fromRoot('src', 'routes', 'p', '[id]', 'PollResultView.svelte'), 'utf8');
 const i18n = await readFile(fromRoot('src', 'lib', 'i18n.ts'), 'utf8');
 const voting = await readFile(fromRoot('src', 'lib', 'voting.ts'), 'utf8');
 const css = await readFile(fromRoot('src', 'app.css'), 'utf8');
@@ -84,8 +84,8 @@ for (const icon of manifest.icons || []) {
 	check(await exists(iconPath), `Manifest icon is missing: ${icon.src}`);
 }
 
-check(/FROM --platform=\$BUILDPLATFORM node:26-alpine3\.24 AS base/.test(dockerfile), 'Dockerfile should use Node 26 Alpine for multi-arch builds.');
-check(/FROM node:26-alpine3\.24 AS runtime-base/.test(dockerfile), 'Dockerfile should use a target-platform Node runtime base.');
+check(/FROM --platform=\$BUILDPLATFORM node:26\.11\.1-alpine3\.24 AS base/.test(dockerfile), 'Dockerfile should use the reviewed Node 26 Alpine for multi-arch builds.');
+check(/FROM node:26\.11\.1-alpine3\.24 AS runtime-base/.test(dockerfile), 'Dockerfile should use a target-platform Node runtime base.');
 check(dockerfile.includes('/usr/lib/libatomic.so.1*'), 'Node 26 runtime should include libatomic.');
 check(!(await exists(fromRoot('svelte.config.js'))), 'Kit 3 should keep configuration in the Vite plugin.');
 check(/FROM scratch AS runtime/.test(dockerfile), 'Dockerfile should use a minimal scratch runtime image.');
@@ -97,18 +97,19 @@ check(/USER 10001:10001/.test(dockerfile), 'Dockerfile should run the runtime im
 check(/CMD \["\/usr\/local\/bin\/node", "tools\/server.mjs"\]/.test(dockerfile), 'Dockerfile should use the runtime-origin server entrypoint.');
 check(/org\.opencontainers\.image\.version="\$\{VERSION\}"/.test(dockerfile), 'Dockerfile should expose OCI version metadata.');
 check(/org\.opencontainers\.image\.authors=/.test(dockerfile), 'Dockerfile should expose OCI author metadata.');
-check(/postgres:18-alpine/.test(compose), 'Docker Compose should include PostgreSQL 18 Alpine.');
-check(!/container_name:/.test(compose), 'Docker Compose should not pin container names, so services remain scalable.');
+check(compose.includes(`termindiego25/termincount:postgres-18.6-${packageJson.version}`), 'Docker Compose should use the reviewed PostgreSQL image.');
+check(/@typescript\/native/.test(JSON.stringify(packageJson.devDependencies)) && /--tsgo/.test(packageJson.scripts.check), 'TypeScript 7 should be the active checker with its compatibility alias.');
 check(databaseEnv.POSTGRES_PASSWORD_FILE === '/run/secrets/db_password', 'PostgreSQL env file should use the password secret.');
 check(appEnv.DB_PASSWORD_FILE === '/run/secrets/db_password', 'App env file should use the password secret.');
 for (const deployment of [compose, traefikCompose]) {
+	check(/container_name: termincount_app/.test(deployment) && /container_name: termincount_db/.test(deployment), 'Service container names should use the termincount_ prefix.');
 	check(!/^\s+environment:/m.test(deployment), 'Runtime settings should stay in service env files.');
 	check(/- postgresql\.env/.test(deployment) && /- termincount\.env/.test(deployment), 'Compose should load both service env files.');
 	check((deployment.match(/- db_password/g) || []).length === 2, 'Both services should mount the database password secret.');
 }
 check(/\.\/data\/postgres:\/var\/lib\/postgresql/.test(compose), 'Docker Compose should store PostgreSQL data in the project data folder.');
 check(/127\.0\.0\.1:\$\{TERMINCOUNT_PORT:-8080\}:3000/.test(compose), 'Docker Compose should bind the app port to loopback.');
-check(appEnv.DB_HOST === 'db', 'The default app env file should name the Compose database service.');
+check(appEnv.DB_HOST === 'termincount_db', 'The default app env file should name the Compose database service.');
 check(/ORIGIN=http:\/\/localhost:8080/.test(composeEnvExample), 'TerminCount env example should include a local ORIGIN.');
 check(
 	/TERMINCOUNT_DB_POOL_SIZE=10/.test(composeEnvExample),

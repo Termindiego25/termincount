@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test('preserves runtime HTTPS origin behind an HTTP reverse proxy', async ({ playwright }) => {
-	const request = await playwright.request.newContext({ baseURL: 'http://127.0.0.1:4175' });
+	const request = await playwright.request.newContext({ baseURL: 'http://127.0.0.1:4176' });
 	try {
 		const origin = 'https://proxy.example.test';
 		const created = await request.post('/api/polls', {
