@@ -59,6 +59,7 @@ Attach Traefik to this external network and adapt [deploy/traefik.example.yaml](
 
 ```env
 ORIGIN=https://termincount.example.com
+DB_HOST=termincount_db
 ```
 
 Traefik forwards HTTP to `http://termincount:3000`. This Compose publishes no host ports and isolates PostgreSQL on an internal network. HTTPS certificates belong to Traefik; TerminCount does not mount or use them. `TERMINCOUNT_DOMAIN` from the old static server is obsolete.
@@ -85,13 +86,13 @@ Image tags are `1.3.1` (this patch), `1.3` (the compatible series), and `latest`
 
 ## Configuration
 
-Use KEY=value in env files. `termincount.env` holds app settings, `postgresql.env` optional database initialization settings, and `secrets/credentials/*.txt` database credentials. These files and database data are ignored by Git/build context; the `.example` files contain no real credentials.
+Use KEY=value in env files. `termincount.env` holds app settings and credential-file paths, `postgresql.env` database initialization settings and credential-file paths, and `secrets/credentials/*.txt` database credentials. These files and database data are ignored by Git/build context; the `.example` files contain no real credentials.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `ORIGIN` | unset; local example uses `http://localhost:8080` | Browser-facing scheme + host + optional port, without a path or trailing slash. Set explicitly behind HTTPS/proxies. |
 | `DATABASE_URL` / `DATABASE_URL_FILE` | assembled from DB settings | Complete PostgreSQL URL or file containing it. Takes precedence over individual settings. |
-| `DB_HOST` | `127.0.0.1` | Database hostname; Compose sets the database service name. IPv6 hosts are supported. |
+| `DB_HOST` | `127.0.0.1` | Database hostname; set `db` in the default Compose or `termincount_db` in the Traefik example. IPv6 hosts are supported. |
 | `DB_PORT` | `5432` | Database port. |
 | `DB_NAME` / `DB_NAME_FILE` | `termincount` | Database name or secret-file path. |
 | `DB_USER` / `DB_USER_FILE` | `termincount` | Database user or secret-file path. |
@@ -105,7 +106,7 @@ Use KEY=value in env files. `termincount.env` holds app settings, `postgresql.en
 | `TERMINCOUNT_VERSION` | `1.3.1` in Compose | Image tag, supplied through the shell/project .env. |
 | `TERMINCOUNT_PORT` / `POSTGRES_PORT` | `8080` / `5432` in default Compose | Loopback host ports, supplied through the shell/project .env; absent from the Traefik Compose. |
 
-An explicit environment value wins over its `_FILE` variant. `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` (also `_FILE`) are supported as legacy database-setting aliases. PostgreSQL's own `POSTGRES_*_FILE` initialization values are set in Compose.
+An explicit environment value wins over its `_FILE` variant. `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` (also `_FILE`) are supported as legacy database-setting aliases. PostgreSQL's own `POSTGRES_*_FILE` initialization values are set in postgresql.env.
 
 The project `.env` provides Compose substitutions. A service's env_file provides variables to that container; it does not set image tags or port substitutions for Compose. Database initialization secrets affect only an empty PostgreSQL data directory. See [Operations](docs/OPERATIONS.md) before changing them on an existing deployment.
 

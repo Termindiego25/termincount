@@ -1,6 +1,7 @@
 import { access, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseEnv } from 'node:util';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const fromRoot = (...parts) => path.join(root, ...parts);
@@ -31,6 +32,9 @@ const css = await readFile(fromRoot('src', 'app.css'), 'utf8');
 const dockerfile = await readFile(fromRoot('Dockerfile'), 'utf8');
 const compose = await readFile(fromRoot('docker-compose.yaml'), 'utf8');
 const composeEnvExample = await readFile(fromRoot('termincount.env.example'), 'utf8');
+const appEnv = parseEnv(composeEnvExample);
+const databaseEnv = parseEnv(await readFile(fromRoot('postgresql.env.example'), 'utf8'));
+const traefikCompose = await readFile(fromRoot('deploy', 'compose.traefik.yaml'), 'utf8');
 const manifest = JSON.parse(await readFile(fromRoot('static', 'images', 'favicon', 'manifest.json'), 'utf8'));
 const source = [appHtml, page, shell, pollPage, i18n, voting, css].join('\n');
 
@@ -93,11 +97,16 @@ check(/org\.opencontainers\.image\.version="\$\{VERSION\}"/.test(dockerfile), 'D
 check(/org\.opencontainers\.image\.authors=/.test(dockerfile), 'Dockerfile should expose OCI author metadata.');
 check(/postgres:18-alpine/.test(compose), 'Docker Compose should include PostgreSQL 18 Alpine.');
 check(!/container_name:/.test(compose), 'Docker Compose should not pin container names, so services remain scalable.');
-check(/POSTGRES_PASSWORD_FILE: \/run\/secrets\/db_password/.test(compose), 'Docker Compose should pass the PostgreSQL password through Docker Secrets.');
-check(/DB_PASSWORD_FILE: \/run\/secrets\/db_password/.test(compose), 'Docker Compose should pass the app database password through Docker Secrets.');
+check(databaseEnv.POSTGRES_PASSWORD_FILE === '/run/secrets/db_password', 'PostgreSQL env file should use the password secret.');
+check(appEnv.DB_PASSWORD_FILE === '/run/secrets/db_password', 'App env file should use the password secret.');
+for (const deployment of [compose, traefikCompose]) {
+	check(!/^\s+environment:/m.test(deployment), 'Runtime settings should stay in service env files.');
+	check(/- postgresql\.env/.test(deployment) && /- termincount\.env/.test(deployment), 'Compose should load both service env files.');
+	check((deployment.match(/- db_password/g) || []).length === 2, 'Both services should mount the database password secret.');
+}
 check(/\.\/data\/postgres:\/var\/lib\/postgresql/.test(compose), 'Docker Compose should store PostgreSQL data in the project data folder.');
 check(/127\.0\.0\.1:\$\{TERMINCOUNT_PORT:-8080\}:3000/.test(compose), 'Docker Compose should bind the app port to loopback.');
-check(/DB_HOST: db/.test(compose), 'Docker Compose should wire the app to the PostgreSQL service.');
+check(appEnv.DB_HOST === 'db', 'The default app env file should name the Compose database service.');
 check(/ORIGIN=http:\/\/localhost:8080/.test(composeEnvExample), 'TerminCount env example should include a local ORIGIN.');
 check(
 	/TERMINCOUNT_DB_POOL_SIZE=10/.test(composeEnvExample),

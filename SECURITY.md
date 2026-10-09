@@ -9,3 +9,5 @@ TerminCount is a manual counter, not an authenticated election system. Anyone wh
 Run behind HTTPS, keep PostgreSQL private, protect secret files and backups, and apply request limits at the edge for an Internet-facing installation. Browser writes require the matching Origin header. Do not enable Cloudflare Rocket Loader or cache HTML, API, or SSE responses.
 
 Dependency audits and container scans report known issues at the time of scanning; they are not a guarantee that the application is free of vulnerabilities.
+
+Scan the PostgreSQL image separately from the TerminCount image. Official database images can include flagged operating-system libraries and startup helpers even when PostgreSQL itself is current. Review the affected component and reachable code paths, apply upstream updates when available, and retain network isolation. A clean application-image scan does not establish a clean deployment; do not suppress findings merely to obtain a passing badge.

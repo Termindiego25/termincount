@@ -6,10 +6,6 @@ services:
     restart: unless-stopped
     env_file:
       - postgresql.env
-    environment:
-      POSTGRES_DB_FILE: /run/secrets/db_database
-      POSTGRES_USER_FILE: /run/secrets/db_username
-      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
     secrets:
       - db_database
       - db_username
@@ -39,12 +35,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_NAME_FILE: /run/secrets/db_database
-      DB_USER_FILE: /run/secrets/db_username
-      DB_PASSWORD_FILE: /run/secrets/db_password
     secrets:
       - db_database
       - db_username

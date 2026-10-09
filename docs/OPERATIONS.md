@@ -49,6 +49,8 @@ When adopting the Traefik Compose example, its database network/container names 
 
 Do not upgrade PostgreSQL to another major by changing its image tag against the existing data directory. Use PostgreSQL's documented upgrade/dump-and-restore procedures.
 
+PostgreSQL minor updates within version 18 normally reuse the existing data directory after a clean shutdown; read the release notes first and test recovery. Record the database image digest as well as the app digest before updating. Do not switch between Alpine and Debian just to change scanner results: their locale/collation implementations can differ. Scan database images independently and review unresolved upstream findings instead of treating the app scan as coverage of the whole stack.
+
 ## Rotating a database password
 
 After a verified backup, stop only the app and open PostgreSQL's interactive client. Use your database service name:
