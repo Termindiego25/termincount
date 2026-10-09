@@ -7,6 +7,7 @@
 - Update Node types to 26.6.5 and pin/watch the latest Node 26.11.1 and PostgreSQL 18.6 image versions.
 - Deduplicate keyed vote/undo retries in PostgreSQL, including empty undo operations; recover pending browser-tab actions after a lost response or reload.
 - Reject writes that expire while waiting on a database lock; reset the result view/subscription when navigating between polls.
+- Preserve options typed before JavaScript hydration completes, including slow/mobile connections.
 - Clean expired polls in background batches with lock skipping instead of one startup-blocking delete.
 - Restore fixed termincount_app/termincount_db container names, per-service env files and Docker Secrets; keep Traefik's termincount alias.
 - Add a separately tagged PostgreSQL image with available Alpine security updates and su-exec 0.3 instead of the old Go startup helper. Document unresolved upstream libxml2 findings rather than suppressing them.

@@ -21,12 +21,6 @@
 		optionInputs = [...optionInputs, ''];
 	}
 
-	function updateOption(index: number, value: string) {
-		optionInputs = optionInputs.map((option, optionIndex) =>
-			optionIndex === index ? value : option
-		);
-	}
-
 	function resetToHome() {
 		title = '';
 		optionInputs = [''];
@@ -98,8 +92,7 @@
 						aria-label={t(currentLang, 'ph.option', { n: index + 1 })}
 						autocomplete="off"
 						maxlength="80"
-						value={option}
-						oninput={(event) => updateOption(index, event.currentTarget.value)}
+						bind:value={optionInputs[index]}
 					/>
 				{/each}
 				<div id="help-max" class="form-text">{t(currentLang, 'help.max')}</div>

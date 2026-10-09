@@ -38,7 +38,7 @@ The database image retains upstream root startup to initialize/chown a fresh bin
 
 ## Source Review and Verification
 
-The review included poll/session authorization, Origin handling, input limits and parameterized SQL, transactions, realtime subscriptions/recovery, cleanup, browser mutation flow, route changes, sharing, layout, themes, server startup and deployment/release documentation. It found and reproduced duplicate retries, writes expiring while blocked and stale tally/subscription state after SPA navigation. Regression tests now cover their repairs, lost-response/reload recovery and receipt cleanup.
+The review included poll/session authorization, Origin handling, input limits and parameterized SQL, transactions, realtime subscriptions/recovery, cleanup, browser mutation flow, route changes, sharing, layout, themes, server startup and deployment/release documentation. It found and reproduced duplicate retries, writes expiring while blocked, stale tally/subscription state after SPA navigation and options lost when typed before hydration completed. Regression tests now cover their repairs, lost-response/reload recovery and receipt cleanup.
 
 Expired cleanup now runs in bounded background transactions with SKIP LOCKED; it no longer performs one unbounded startup delete. Vote/undo row-lock waits and statements are time limited. PostgreSQL remains the shared source of truth, with atomic receipts/votes/notifications. The current SvelteKit/PostgreSQL stack supports these contracts without another framework migration.
 
