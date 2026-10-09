@@ -1,4 +1,6 @@
 node_modules/
+.npmrc
+**/.npmrc
 .svelte-kit/
 build/
 playwright-report/

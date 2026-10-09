@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import AppShell from '$lib/AppShell.svelte';
-	import { translate, type Language } from '$lib/i18n';
-	import { MAX_OPTIONS } from '$lib/voting';
+	import AppShell from '#lib/AppShell.svelte';
+	import { translate, type Language } from '#lib/i18n.js';
+	import { MAX_OPTIONS } from '#lib/voting.js';
 
 	let currentLang: Language = 'es';
 	let title = '';

@@ -43,7 +43,7 @@ Edit the password secret before starting. Keep `ORIGIN=http://localhost:8080` fo
 docker compose up -d
 ```
 
-Open [http://localhost:8080](http://localhost:8080). The default Compose uses the published `1.3.2` image and PostgreSQL 18. Its host ports bind to loopback: other computers must use a reverse proxy or an explicitly configured host binding. Database files persist in `./data/postgres`; credentials are mounted as Docker Secrets.
+Open [http://localhost:8080](http://localhost:8080). The default Compose uses the `1.4.0` image and PostgreSQL 18. Its host ports bind to loopback: other computers must use a reverse proxy or an explicitly configured host binding. Database files persist in `./data/postgres`; credentials are mounted as Docker Secrets.
 
 On PowerShell, the same `cp` commands are available as aliases for `Copy-Item`. Docker and Docker Compose are required; Node/npm are only needed for development or building from source.
 
@@ -77,12 +77,12 @@ docker run -d --name termincount --network your-db-network \
   -p 127.0.0.1:8080:3000 \
   -e DATABASE_URL='postgres://user:password@your-db-host:5432/your-db-name' \
   -e ORIGIN='http://localhost:8080' \
-  termindiego25/termincount:1.3.2
+  termindiego25/termincount:1.4.0
 ```
 
 The connection string is an example: use your actual host/credentials, percent-encode reserved characters, and prefer `DATABASE_URL_FILE` or the individual `DB_*_FILE` variables with mounted secrets. Compose is the simpler deployment for most installations.
 
-Image tags are `1.3.2` (this patch), `1.3` (the compatible series), and `latest` (the current published release). Fix an exact version or digest for controlled upgrades. The image supports linux/amd64, linux/arm64, and linux/arm/v7 and runs as UID/GID 10001 on container port 3000. It uses a patched Node 22 runtime copied into scratch; rebuilding is still necessary to receive runtime/library security updates.
+Image tags are `1.4.0` (this release), `1.4` (the release series), and `latest` (the current published release). Fix an exact version or digest for controlled upgrades. The image supports linux/amd64 and linux/arm64 and runs as UID/GID 10001 on container port 3000. It uses Node 26 Current copied into scratch; rebuilding is still necessary to receive runtime/library security updates. ARM32 users must keep the older `1.3.2` image: official Node 26 images no longer provide linux/arm/v7.
 
 ## Configuration
 
@@ -90,7 +90,7 @@ Use KEY=value in env files. `termincount.env` holds app settings and credential-
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `ORIGIN` | unset; local example uses `http://localhost:8080` | Browser-facing scheme + host + optional port, without a path or trailing slash. Set explicitly behind HTTPS/proxies. |
+| `ORIGIN` | unset; local example uses `http://localhost:8080` | Browser-facing scheme + host + optional port, without credentials, path, query or fragment. Set explicitly for HTTP and HTTPS deployments. TerminCount preserves this runtime setting with adapter-node 6. |
 | `DATABASE_URL` / `DATABASE_URL_FILE` | assembled from DB settings | Complete PostgreSQL URL or file containing it. Takes precedence over individual settings. |
 | `DB_HOST` | `127.0.0.1` | Database hostname; set `db` in the default Compose or `termincount_db` in the Traefik example. IPv6 hosts are supported. |
 | `DB_PORT` | `5432` | Database port. |
@@ -103,7 +103,7 @@ Use KEY=value in env files. `termincount.env` holds app settings and credential-
 | `HOST` / `PORT` | `0.0.0.0` / `3000` in Docker | Internal listening address/port. |
 | `BODY_SIZE_LIMIT` | `16K` in Docker | Node adapter request limit; JSON endpoints also reject oversized declared payloads. |
 | `SHUTDOWN_TIMEOUT` | `30` seconds | Node adapter grace period for connections during shutdown. |
-| `TERMINCOUNT_VERSION` | `1.3.2` in Compose | Image tag, supplied through the shell/project .env. |
+| `TERMINCOUNT_VERSION` | `1.4.0` in Compose | Image tag, supplied through the shell/project .env. |
 | `TERMINCOUNT_PORT` / `POSTGRES_PORT` | `8080` / `5432` in default Compose | Loopback host ports, supplied through the shell/project .env; absent from the Traefik Compose. |
 
 An explicit environment value wins over its `_FILE` variant. `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` (also `_FILE`) are supported as legacy database-setting aliases. PostgreSQL's own `POSTGRES_*_FILE` initialization values are set in postgresql.env.
@@ -124,7 +124,7 @@ For a proxy 404, check router loading/hostname rules. For a 502, check the share
 
 ## Development and checks
 
-Use Node 22.12+ with the npm version in package.json. For a local database and dev server:
+Use Node 26.11.1+ and npm 12.2.0. For a local database and dev server:
 
 ```bash
 npm ci
@@ -133,7 +133,7 @@ docker compose up -d db
 npm run dev
 ```
 
-Open [http://127.0.0.1:8765](http://127.0.0.1:8765). Match DATABASE_URL to your development secrets. For the built server, production does not automatically load `.env`; use `node --env-file=.env build` with the matching ORIGIN/PORT.
+Open [http://127.0.0.1:8765](http://127.0.0.1:8765). Match DATABASE_URL to your development secrets. For the built server, production does not automatically load `.env`; use `node --env-file=.env tools/server.mjs` with the matching ORIGIN/PORT. Do not bypass this entrypoint when relying on runtime ORIGIN.
 
 ```bash
 npm test
@@ -143,9 +143,11 @@ npm run test:e2e
 npm audit
 ```
 
-Use a dedicated test database. E2E/API tests start two app instances on 4173/4174 with single-connection pools and exercise ownership, input limits, concurrent writes, expiration, listener recovery, live results, and mobile layout. Set DATABASE_URL in your shell when the test database differs from the example.
+Use a dedicated test database. E2E/API tests start three app instances on 4173-4175 with single-connection pools and exercise ownership, input limits, concurrent writes, expiration, listener recovery, live results, HTTP/HTTPS proxy configuration, and mobile layout. Set DATABASE_URL in your shell when the test database differs from the example.
 
-For a local image, `docker build -t termindiego25/termincount:1.3.2 .` builds from the current source. Release/export/publishing instructions and SBOM/provenance handling are documented separately for [Maintainers](docs/MAINTAINERS.md).
+For a local image, `docker build -t termindiego25/termincount:1.4.0 .` builds from the current source. Release/export/publishing instructions and SBOM/provenance handling are documented separately for [Maintainers](docs/MAINTAINERS.md).
+
+The application dependencies use current releases except TypeScript: the latest SvelteKit and svelte-check still require version 6, so TypeScript 7 cannot be installed without bypassing their compatibility constraints. Known vulnerabilities are checked independently from version freshness. Node 26 is Current, not LTS, and requires following its subsequent release/support cycle.
 
 ## Project structure
 
@@ -159,6 +161,7 @@ tests/                   Browser and API regression tests
 deploy/                  Traefik and production Compose examples
 docs/                    Operations and maintainer procedures
 tools/                   Project checks and reproducible release export
+tools/npm-bundle/        Locked fixes for npm's bundled build-tool dependencies
 ```
 
 Built with SvelteKit, Svelte, TypeScript, Vite, PostgreSQL, Bootstrap CSS, and Playwright. See [Contributing](CONTRIBUTING.md) and [Security policy](SECURITY.md).

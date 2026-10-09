@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
-import { getPoll } from '$lib/server/polls';
-import { ensureRealtimeListener, refreshPoll, subscribeToPoll } from '$lib/server/realtime';
+import { getPoll } from '#lib/server/polls.js';
+import { ensureRealtimeListener, refreshPoll, subscribeToPoll } from '#lib/server/realtime.js';
 import type { RequestHandler } from './$types';
 
 const encoder = new TextEncoder();

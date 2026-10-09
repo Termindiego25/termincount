@@ -45,6 +45,14 @@ Expired polls retain their original expiry dates and may be cleaned on startup. 
 
 Make a verified dump first and record the running image digest/revision. Set the app image to `termindiego25/termincount:1.3.2` and keep the PostgreSQL 18 volume and credentials. Pull and recreate only the app when updating code. The 1.3.1 and 1.3.2 patches use the existing schema and are compatible with 1.3.0 data/cookies; rollback to the old app image is possible.
 
+## Upgrading to 1.4
+
+The Node 26 / SvelteKit 3 migration preserves the schema, poll URLs, owner-session cookies, ORIGIN and Docker Secrets. Use the published 1.4 app image and keep PostgreSQL 18 data/credentials; no database major upgrade is part of this migration. Recreate only the app after a backup and validation. ARM64 Raspberry Pi deployments are supported; ARM32 images are no longer produced for this series.
+
+Keep ORIGIN in termincount.env. Adapter-node 6 no longer reads that setting itself, so tools/server.mjs validates it and pins the adapter's protocol/host headers to the configured public origin before request handling. The header values are overwritten, not trusted from arbitrary clients. The adapter's native graceful shutdown remains in use. For source deployments run this entrypoint rather than node build.
+
+Application images, build tools, database images and host OS are separate maintenance surfaces. A refreshed Alpine image does not update Debian on the Docker host, and apt updates do not update running containers. Check all of them, publish rebuilt images and recreate the affected services deliberately. Host Debian/Docker upgrades can affect every project on that server and require their own backup and maintenance window.
+
 When adopting the Traefik Compose example, its database network/container names differ from older setups: stop the original Compose project before starting the replacement, and ensure the external proxy network exists. Preserve data/postgres and secrets. Do not run old and new PostgreSQL containers against the same directory. Keep the original Compose and image digest for rollback.
 
 Do not upgrade PostgreSQL to another major by changing its image tag against the existing data directory. Use PostgreSQL's documented upgrade/dump-and-restore procedures.

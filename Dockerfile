@@ -1,11 +1,15 @@
-# syntax=docker/dockerfile:1.7
+# syntax=docker/dockerfile:1
 
-FROM --platform=$BUILDPLATFORM node:22-alpine AS base
+FROM --platform=$BUILDPLATFORM node:26-alpine3.24 AS base
 
 WORKDIR /app
 
-ARG NPM_VERSION=11.21.0
-RUN npm install -g "npm@${NPM_VERSION}"
+ARG NPM_VERSION=12.2.0
+COPY tools/npm-bundle /opt/termincount-npm-bundle
+RUN apk upgrade --no-cache \
+    && npm install -g "npm@${NPM_VERSION}" \
+    && npm ci --prefix /opt/termincount-npm-bundle --install-strategy=nested --ignore-scripts \
+    && node /opt/termincount-npm-bundle/apply.mjs "$(npm root -g)/npm"
 
 FROM base AS dependencies
 
@@ -24,13 +28,14 @@ ENV NODE_ENV=production
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-FROM node:22-alpine AS runtime-base
+FROM node:26-alpine3.24 AS runtime-base
+RUN apk upgrade --no-cache
 
 FROM scratch AS runtime
 
 WORKDIR /app
 
-ARG VERSION=1.3.2
+ARG VERSION=1.4.0
 ARG VCS_REF=unknown
 ARG BUILD_DATE=unknown
 
@@ -57,11 +62,14 @@ ENV NODE_ENV=production \
 COPY --from=runtime-base /usr/local/bin/node /usr/local/bin/node
 COPY --from=runtime-base /lib/ld-musl-*.so.1 /lib/
 COPY --from=runtime-base /usr/lib/libgcc_s.so.1 /usr/lib/
+COPY --from=runtime-base /usr/lib/libatomic.so.1* /usr/lib/
 COPY --from=runtime-base /usr/lib/libstdc++.so.6* /usr/lib/
 COPY --from=runtime-base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=production-dependencies /app/node_modules ./node_modules
 COPY --from=build /app/build ./build
 COPY package.json ./
+COPY tools/server.mjs ./tools/server.mjs
+COPY src/lib/server/public-origin.ts ./src/lib/server/public-origin.ts
 
 EXPOSE 3000
 
@@ -69,4 +77,4 @@ USER 10001:10001
 
 HEALTHCHECK --interval=30s --timeout=8s --start-period=20s --retries=3 CMD ["/usr/local/bin/node", "-e", "fetch(`http://127.0.0.1:${process.env.PORT || 3000}/healthz`, { signal: AbortSignal.timeout(7000) }).then((r)=>process.exit(r.status===204?0:1)).catch(()=>process.exit(1))"]
 
-CMD ["/usr/local/bin/node", "build"]
+CMD ["/usr/local/bin/node", "tools/server.mjs"]

@@ -28,12 +28,32 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: '22'
+          node-version: '26'
           cache: npm
-      - run: npm install --global npm@11.21.0
+      - run: npm install --global npm@12.2.0
+      - run: npm ci --prefix tools/npm-bundle --install-strategy=nested --ignore-scripts
+      - run: node tools/npm-bundle/apply.mjs "$(npm root -g)/npm"
       - run: npm ci
       - run: npm test
       - run: npm run build
       - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:e2e
       - run: npm audit --audit-level=moderate
+      - run: npm audit --prefix tools/npm-bundle --audit-level=moderate
+      - name: Build and check the actual container runtime
+        run: |
+          docker build --pull -t termincount:ci .
+          docker run -d --name termincount-ci --network host --init --read-only \
+            --cap-drop ALL --security-opt no-new-privileges:true \
+            -e DATABASE_URL=postgres://termincount:termincount@127.0.0.1:5432/termincount \
+            -e ORIGIN=http://localhost:3000 termincount:ci
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent http://localhost:3000/healthz >/dev/null; then
+              docker exec termincount-ci node --version
+              docker stop termincount-ci
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs termincount-ci
+          exit 1

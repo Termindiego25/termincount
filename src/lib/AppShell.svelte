@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
+	import { browser } from '$app/env';
 	import { onMount } from 'svelte';
 	import {
 		detectLanguage,
 		languages,
 		translate,
 		type Language
-	} from '$lib/i18n';
-	import type { ResolvedTheme, ThemeMode } from '$lib/voting';
+	} from '#lib/i18n.js';
+	import type { ResolvedTheme, ThemeMode } from '#lib/voting.js';
 
 	export let currentLang: Language = 'es';
 	export let onHome: (() => void) | undefined = undefined;

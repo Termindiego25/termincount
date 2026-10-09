@@ -1,5 +1,5 @@
 import pg from 'pg';
-import type { PollResult } from '$lib/polls';
+import type { PollResult } from '#lib/polls.js';
 import { getDatabaseUrl } from './config';
 import { ensureDatabase, POLL_UPDATE_CHANNEL } from './db';
 import { getPoll } from './polls';

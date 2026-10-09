@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import QRCode from 'qrcode';
-	import AppShell from '$lib/AppShell.svelte';
-	import { translate, type Language } from '$lib/i18n';
-	import { isPollExpired, totalVotesFor, type PollResult } from '$lib/polls';
-	import { percentage } from '$lib/voting';
+	import AppShell from '#lib/AppShell.svelte';
+	import { translate, type Language } from '#lib/i18n.js';
+	import { isPollExpired, totalVotesFor, type PollResult } from '#lib/polls.js';
+	import { percentage } from '#lib/voting.js';
 	import type { PageData } from './$types';
 
 	export let data: PageData;

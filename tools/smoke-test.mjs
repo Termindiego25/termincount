@@ -22,7 +22,7 @@ async function exists(filePath) {
 
 const packageJson = JSON.parse(await readFile(fromRoot('package.json'), 'utf8'));
 const appHtml = await readFile(fromRoot('src', 'app.html'), 'utf8');
-const svelteConfig = await readFile(fromRoot('svelte.config.js'), 'utf8');
+const svelteConfig = await readFile(fromRoot('vite.config.ts'), 'utf8');
 const page = await readFile(fromRoot('src', 'routes', '+page.svelte'), 'utf8');
 const shell = await readFile(fromRoot('src', 'lib', 'AppShell.svelte'), 'utf8');
 const pollPage = await readFile(fromRoot('src', 'routes', 'p', '[id]', '+page.svelte'), 'utf8');
@@ -84,15 +84,17 @@ for (const icon of manifest.icons || []) {
 	check(await exists(iconPath), `Manifest icon is missing: ${icon.src}`);
 }
 
-check(/FROM --platform=\$BUILDPLATFORM node:22-alpine AS base/.test(dockerfile), 'Dockerfile should use Node 22 Alpine for multi-arch builds.');
-check(/FROM node:22-alpine AS runtime-base/.test(dockerfile), 'Dockerfile should use a target-platform Node runtime base.');
+check(/FROM --platform=\$BUILDPLATFORM node:26-alpine3\.24 AS base/.test(dockerfile), 'Dockerfile should use Node 26 Alpine for multi-arch builds.');
+check(/FROM node:26-alpine3\.24 AS runtime-base/.test(dockerfile), 'Dockerfile should use a target-platform Node runtime base.');
+check(dockerfile.includes('/usr/lib/libatomic.so.1*'), 'Node 26 runtime should include libatomic.');
+check(!(await exists(fromRoot('svelte.config.js'))), 'Kit 3 should keep configuration in the Vite plugin.');
 check(/FROM scratch AS runtime/.test(dockerfile), 'Dockerfile should use a minimal scratch runtime image.');
 check(/COPY --from=runtime-base \/usr\/local\/bin\/node \/usr\/local\/bin\/node/.test(dockerfile), 'Dockerfile should copy the target-platform Node runtime into the final image.');
 check(/COPY --from=build \/app\/build \.\/build/.test(dockerfile), 'Dockerfile should copy the SvelteKit server build output.');
 check(/PORT=3000/.test(dockerfile), 'Dockerfile should use a non-privileged runtime port.');
 check(/EXPOSE 3000/.test(dockerfile), 'Dockerfile should expose the non-privileged runtime port.');
 check(/USER 10001:10001/.test(dockerfile), 'Dockerfile should run the runtime image as a non-root user.');
-check(/CMD \["\/usr\/local\/bin\/node", "build"\]/.test(dockerfile), 'Dockerfile should run the SvelteKit Node server.');
+check(/CMD \["\/usr\/local\/bin\/node", "tools\/server.mjs"\]/.test(dockerfile), 'Dockerfile should use the runtime-origin server entrypoint.');
 check(/org\.opencontainers\.image\.version="\$\{VERSION\}"/.test(dockerfile), 'Dockerfile should expose OCI version metadata.');
 check(/org\.opencontainers\.image\.authors=/.test(dockerfile), 'Dockerfile should expose OCI author metadata.');
 check(/postgres:18-alpine/.test(compose), 'Docker Compose should include PostgreSQL 18 Alpine.');

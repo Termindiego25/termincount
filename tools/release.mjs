@@ -21,14 +21,15 @@ function run(command, arguments_, capture = false) {
 if (!/^\d+\.\d+\.\d+$/.test(pkg.version)) throw new Error('Release version must be a stable semver.');
 if (run('git', ['status', '--porcelain'], true)) throw new Error('Commit the reviewed release files before building.');
 const revision = run('git', ['rev-parse', 'HEAD'], true);
-const builder = process.env.TERMINCOUNT_BUILDER || 'termincount-builder';
-const platforms = process.env.TERMINCOUNT_PLATFORMS || 'linux/amd64,linux/arm64,linux/arm/v7';
+const builder = process.env.TERMINCOUNT_BUILDER || 'termincount-builder-node26';
+const platforms = process.env.TERMINCOUNT_PLATFORMS || 'linux/amd64,linux/arm64';
 const repository = 'termindiego25/termincount';
 const tags = [pkg.version, pkg.version.split('.').slice(0, 2).join('.'), 'latest'];
 run('docker', ['buildx', 'inspect', builder, '--bootstrap']);
 await mkdir(path.join(root, 'artifacts'), { recursive: true });
 const buildArgs = [
 	'buildx', 'build', '--builder', builder, '--platform', platforms, '--pull',
+	'--no-cache-filter', 'base,runtime-base',
 	'--build-arg', `VERSION=${pkg.version}`, '--build-arg', `VCS_REF=${revision}`,
 	'--build-arg', `BUILD_DATE=${new Date().toISOString()}`,
 	'--sbom=true', '--provenance=mode=max',

@@ -1,8 +1,9 @@
 import { error, isHttpError, type RequestEvent } from '@sveltejs/kit';
+import { getPublicOrigin } from './public-origin';
 
 export function assertSameOrigin(event: RequestEvent): void {
 	const origin = event.request.headers.get('origin');
-	if (origin !== event.url.origin) {
+	if (origin !== getPublicOrigin(event.url)) {
 		error(403, 'Cross-origin requests are not allowed.');
 	}
 }

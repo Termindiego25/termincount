@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.4.0 - 2026-10-09
+
+- Move the runtime and CI to Node 26 Current and npm 12; migrate to SvelteKit 3 and adapter-node 6 with matching Node 26 types.
+- Move configuration into the Vite plugin, use native subpath imports and remove the obsolete cookie 1 override.
+- Preserve runtime ORIGIN, owner cookies and CSRF checks across direct HTTP and HTTPS reverse-proxy deployments.
+- Include Node 26's required libatomic library in the non-root scratch runtime.
+- Upgrade Alpine packages during releases and patch vulnerable npm-bundled libraries using locked, API-compatible dependency updates.
+- Check the real container startup in CI, not just JavaScript dependencies.
+- Add HTTP/HTTPS-origin regression tests. Existing data, poll URLs, secrets and owner cookies remain compatible.
+
+Images now target linux/amd64 and linux/arm64. Official Node 26 images do not support linux/arm/v7; 1.3.2 remains the last published ARM32 release. TypeScript 7 is not yet supported by the latest Svelte tooling and is not forced into the dependency tree.
+
 ## 1.3.2 - 2026-10-09
 
 - Include global styles in the initial server-rendered HTML instead of waiting for client-side JavaScript.
