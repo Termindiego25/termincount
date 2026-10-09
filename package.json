@@ -1,6 +1,6 @@
 {
   "name": "termincount",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
   "description": "Shareable live vote counter web app built with SvelteKit and PostgreSQL.",
   "author": "Termindiego25",
@@ -25,7 +25,7 @@
     "dev": "vite dev --host 127.0.0.1",
     "build": "vite build",
     "preview": "node tools/server.mjs",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "check": "svelte-kit sync && node tools/reset-check-cache.mjs && svelte-check --tsgo --fail-on-warnings --tsconfig ./tsconfig.json",
     "test": "npm run check && node tools/smoke-test.mjs",
     "test:e2e": "playwright test",
     "release": "node tools/release.mjs"
@@ -36,11 +36,12 @@
     "qrcode": "1.5.4"
   },
   "devDependencies": {
+    "@typescript/native": "npm:typescript@7.0.2",
     "@playwright/test": "1.64.0",
     "@sveltejs/adapter-node": "6.0.0",
     "@sveltejs/kit": "3.0.1",
     "@sveltejs/vite-plugin-svelte": "7.3.1",
-    "@types/node": "26.6.4",
+    "@types/node": "26.6.5",
     "@types/pg": "8.23.1",
     "@types/qrcode": "1.5.6",
     "svelte": "5.57.2",

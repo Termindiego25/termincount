@@ -17,6 +17,7 @@ pool.on('error', (error) => {
 
 let initPromise: Promise<void> | null = null;
 let cleanupTimer: NodeJS.Timeout | null = null;
+let cleanupPromise: Promise<number> | null = null;
 
 export async function ensureDatabase(): Promise<void> {
 	if (!initPromise) {
@@ -64,6 +65,15 @@ async function initializeDatabase(): Promise<void> {
 			created_at timestamptz NOT NULL DEFAULT now()
 		);
 
+		CREATE TABLE IF NOT EXISTS mutation_receipts (
+			poll_id text NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
+			request_id text NOT NULL,
+			kind text NOT NULL CHECK (kind IN ('vote', 'undo')),
+			option_index integer,
+			PRIMARY KEY (poll_id, request_id),
+			CHECK ((kind = 'vote' AND option_index IS NOT NULL AND option_index BETWEEN 0 AND 8) OR (kind = 'undo' AND option_index IS NULL))
+		);
+
 		CREATE INDEX IF NOT EXISTS idx_polls_expires_at ON polls (expires_at);
 		CREATE INDEX IF NOT EXISTS idx_poll_options_poll_position ON poll_options (poll_id, position);
 		CREATE INDEX IF NOT EXISTS idx_vote_events_poll_created ON vote_events (poll_id, id DESC);
@@ -76,8 +86,8 @@ async function initializeDatabase(): Promise<void> {
 		client.release();
 	}
 
-	await cleanupExpiredPolls();
 	startCleanupLoop();
+	void cleanupExpiredPolls().catch((error) => console.error('Failed to clean expired polls', error.message));
 }
 
 function startCleanupLoop() {
@@ -101,8 +111,24 @@ export async function checkDatabase(): Promise<void> {
 }
 
 export async function cleanupExpiredPolls(): Promise<number> {
-	const result = await pool.query('DELETE FROM polls WHERE expires_at <= now()');
-	return result.rowCount ?? 0;
+	if (cleanupPromise) return cleanupPromise;
+	cleanupPromise = (async () => {
+		let total = 0;
+		while (true) {
+			// Bound each transaction and skip rows locked by other replicas or in-flight mutations.
+			const result = await pool.query(`
+				WITH expired AS (
+					SELECT id FROM polls WHERE expires_at <= now()
+					ORDER BY expires_at LIMIT 100 FOR UPDATE SKIP LOCKED
+				)
+				DELETE FROM polls USING expired WHERE polls.id = expired.id
+			`);
+			total += result.rowCount ?? 0;
+			if (!result.rowCount) return total;
+			await new Promise((resolve) => setTimeout(resolve, 20));
+		}
+	})().finally(() => { cleanupPromise = null; });
+	return cleanupPromise;
 }
 
 export async function closeDatabase(): Promise<void> {
@@ -110,6 +136,7 @@ export async function closeDatabase(): Promise<void> {
 		clearInterval(cleanupTimer);
 		cleanupTimer = null;
 	}
+	await cleanupPromise?.catch(() => {});
 
 	await pool.end();
 	initPromise = null;

@@ -8,6 +8,13 @@ export function assertSameOrigin(event: RequestEvent): void {
 	}
 }
 
+export function getMutationKey(request: Request): string | undefined {
+	const key = request.headers.get('idempotency-key');
+	if (key === null) return undefined;
+	if (!/^[A-Za-z0-9_-]{16,128}$/.test(key)) error(400, 'Invalid idempotency key.');
+	return key;
+}
+
 export async function readJsonBody(request: Request): Promise<unknown> {
 	if (Number(request.headers.get('content-length')) > 16 * 1024) error(413, 'Payload too large.');
 	if (request.headers.get('content-type')?.split(';')[0].trim().toLowerCase() !== 'application/json') {

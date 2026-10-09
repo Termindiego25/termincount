@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM --platform=$BUILDPLATFORM node:26-alpine3.24 AS base
+FROM --platform=$BUILDPLATFORM node:26.11.1-alpine3.24 AS base
 
 WORKDIR /app
 
@@ -16,6 +16,13 @@ FROM base AS dependencies
 COPY package.json package-lock.json ./
 RUN npm ci
 
+FROM base AS build-tool-test
+RUN apk add --no-cache python3 make g++
+COPY tools/npm-bundle/test /native-test
+WORKDIR /native-test
+RUN node /usr/local/lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js rebuild \
+    && node -e "if(require('./build/Release/fixture.node').answer !== 42) process.exit(1)"
+
 FROM dependencies AS build
 
 COPY . .
@@ -28,14 +35,14 @@ ENV NODE_ENV=production
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-FROM node:26-alpine3.24 AS runtime-base
+FROM node:26.11.1-alpine3.24 AS runtime-base
 RUN apk upgrade --no-cache
 
 FROM scratch AS runtime
 
 WORKDIR /app
 
-ARG VERSION=1.4.0
+ARG VERSION=1.5.0
 ARG VCS_REF=unknown
 ARG BUILD_DATE=unknown
 

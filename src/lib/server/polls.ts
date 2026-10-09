@@ -138,7 +138,7 @@ async function readPoll(queryable: Queryable, id: string): Promise<PollSnapshot 
 			) ORDER BY position), '[]'::json)
 			FROM poll_options WHERE poll_id = p.id
 		) AS options
-		FROM polls p WHERE id = $1 AND expires_at > now()
+		FROM polls p WHERE id = $1 AND expires_at > clock_timestamp()
 	`, [id]);
 	const row = pollResult.rows[0];
 	if (!row) return null;
@@ -149,13 +149,18 @@ async function readPoll(queryable: Queryable, id: string): Promise<PollSnapshot 
 	};
 }
 
-export async function recordVote(id: string, index: number, ownerSessionHash: string): Promise<PollResult> {
+export async function recordVote(id: string, index: number, ownerSessionHash: string, requestId?: string): Promise<PollResult> {
 	await ensureDatabase();
 
 	const client = await pool.connect();
 	try {
 		await client.query('BEGIN');
 		const poll = await requireOwnedPoll(client, id, ownerSessionHash);
+		const repeated = await claimMutation(client, id, requestId, 'vote', index);
+		if (repeated) {
+			await client.query('COMMIT');
+			return repeated;
+		}
 		const option = await client.query<OptionRow>(
 			'SELECT * FROM poll_options WHERE poll_id = $1 AND position = $2 FOR UPDATE',
 			[id, index]
@@ -178,13 +183,18 @@ export async function recordVote(id: string, index: number, ownerSessionHash: st
 	}
 }
 
-export async function undoLastVote(id: string, ownerSessionHash: string): Promise<PollResult> {
+export async function undoLastVote(id: string, ownerSessionHash: string, requestId?: string): Promise<PollResult> {
 	await ensureDatabase();
 
 	const client = await pool.connect();
 	try {
 		await client.query('BEGIN');
 		const poll = await requireOwnedPoll(client, id, ownerSessionHash);
+		const repeated = await claimMutation(client, id, requestId, 'undo', null);
+		if (repeated) {
+			await client.query('COMMIT');
+			return repeated;
+		}
 		const latest = await client.query<{ id: string; option_id: string }>(
 			`
 				SELECT id, option_id
@@ -226,16 +236,41 @@ async function requireOwnedPoll(
 	id: string,
 	ownerSessionHash: string
 ): Promise<PollRow> {
+	await client.query("SET LOCAL lock_timeout = '5s'; SET LOCAL statement_timeout = '10s'");
 	const result = await client.query<PollRow>(
-		'SELECT * FROM polls WHERE id = $1 AND expires_at > now() FOR UPDATE',
+		'SELECT * FROM polls WHERE id = $1 FOR UPDATE',
 		[id]
 	);
 	const poll = result.rows[0];
 
 	if (!poll) error(404, 'Poll not found.');
+	// A transaction may have waited on the row lock past the expiry time.
+	const active = await client.query('SELECT 1 FROM polls WHERE id = $1 AND expires_at > clock_timestamp()', [id]);
+	if (!active.rowCount) error(404, 'Poll not found.');
 	if (poll.owner_session_hash !== ownerSessionHash) error(403, 'This session cannot modify the poll.');
 
 	return poll;
+}
+
+async function claimMutation(
+	client: pg.PoolClient, id: string, requestId: string | undefined, kind: 'vote' | 'undo', index: number | null
+): Promise<PollResult | null> {
+	if (!requestId) return null;
+	// The parent row is locked: receipt and vote commit atomically, including empty undo operations.
+	const receipt = await client.query<{ kind: string; option_index: number | null }>(
+		'SELECT kind, option_index FROM mutation_receipts WHERE poll_id = $1 AND request_id = $2', [id, requestId]
+	);
+	if (receipt.rows[0]) {
+		if (receipt.rows[0].kind !== kind || receipt.rows[0].option_index !== index) {
+			error(409, 'Idempotency key already used for another action.');
+		}
+		const snapshot = await readPoll(client, id);
+		if (!snapshot) error(404, 'Poll not found.');
+		return snapshot.poll;
+	}
+	await client.query('INSERT INTO mutation_receipts (poll_id, request_id, kind, option_index) VALUES ($1, $2, $3, $4)',
+		[id, requestId, kind, index]);
+	return null;
 }
 
 async function finishMutation(client: pg.PoolClient, id: string, expectedOwnerHash: string): Promise<PollResult> {

@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.5.0 - 2026-10-10
+
+- Enable TypeScript 7 through the official svelte-check alias/--tsgo integration, retaining TypeScript 6 only for upstream JavaScript API compatibility.
+- Upgrade npm's bundled node-gyp to 13.1.0 and Undici to 8.11.2 together; test a real native addon/header download in CI.
+- Update Node types to 26.6.5 and pin/watch the latest Node 26.11.1 and PostgreSQL 18.6 image versions.
+- Deduplicate keyed vote/undo retries in PostgreSQL, including empty undo operations; recover pending browser-tab actions after a lost response or reload.
+- Reject writes that expire while waiting on a database lock; reset the result view/subscription when navigating between polls.
+- Clean expired polls in background batches with lock skipping instead of one startup-blocking delete.
+- Restore fixed termincount_app/termincount_db container names, per-service env files and Docker Secrets; keep Traefik's termincount alias.
+- Add a separately tagged PostgreSQL image with available Alpine security updates and su-exec 0.3 instead of the old Go startup helper. Document unresolved upstream libxml2 findings rather than suppressing them.
+
+The new receipt table is additive; existing PostgreSQL 18 data, owner cookies and URLs remain compatible. Review the Compose-name migration and pending-action/rollback precautions in Operations before deployment.
+
 ## 1.4.0 - 2026-10-09
 
 - Move the runtime and CI to Node 26 Current and npm 12; migrate to SvelteKit 3 and adapter-node 6 with matching Node 26 types.
@@ -10,7 +23,7 @@
 - Check the real container startup in CI, not just JavaScript dependencies.
 - Add HTTP/HTTPS-origin regression tests. Existing data, poll URLs, secrets and owner cookies remain compatible.
 
-Images now target linux/amd64 and linux/arm64. Official Node 26 images do not support linux/arm/v7; 1.3.2 remains the last published ARM32 release. TypeScript 7 is not yet supported by the latest Svelte tooling and is not forced into the dependency tree.
+Images now target linux/amd64 and linux/arm64. Official Node 26 images do not support linux/arm/v7; 1.3.2 remains the last published ARM32 release. This release retained TypeScript 6; the official TypeScript 7 compatibility integration was adopted in 1.5.0.
 
 ## 1.3.2 - 2026-10-09
 

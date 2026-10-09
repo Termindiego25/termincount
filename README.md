@@ -8,6 +8,7 @@ TerminCount is a lightweight manual vote counter with temporary, shareable live 
 
 - Optional title and up to nine custom options, or the default in favour / against / blank / null options.
 - Click/tap vote controls, keyboard keys 1-9, and R to undo the last vote.
+- Ordered, retry-safe vote/undo requests with recovery of pending actions in the same browser tab.
 - Public random result URLs, a QR code, and a copy-link button for the creator.
 - Owner-only writes through an HTTP-only browser-session cookie; public viewers cannot change votes.
 - Live updates using Server-Sent Events and PostgreSQL LISTEN/NOTIFY, including across app replicas.
@@ -43,7 +44,7 @@ Edit the password secret before starting. Keep `ORIGIN=http://localhost:8080` fo
 docker compose up -d
 ```
 
-Open [http://localhost:8080](http://localhost:8080). The default Compose uses the `1.4.0` image and PostgreSQL 18. Its host ports bind to loopback: other computers must use a reverse proxy or an explicitly configured host binding. Database files persist in `./data/postgres`; credentials are mounted as Docker Secrets.
+Open [http://localhost:8080](http://localhost:8080). The default Compose uses the `1.5.0` app and our refreshed PostgreSQL 18.6 image. Service/container names are `termincount_app` and `termincount_db`; each uses its own env file. Host ports bind to loopback: other computers must use a reverse proxy or an explicitly configured host binding. Database files persist in `./data/postgres`; credentials are mounted as Docker Secrets. Read the [dependency review](docs/DEPENDENCIES.md) for the database image's remaining upstream security findings.
 
 On PowerShell, the same `cp` commands are available as aliases for `Copy-Item`. Docker and Docker Compose are required; Node/npm are only needed for development or building from source.
 
@@ -71,18 +72,18 @@ The supplied Traefik example flushes SSE immediately and applies a write-only re
 Provide an existing PostgreSQL database. When the database is another container, both containers must join the same Docker network:
 
 ```bash
-docker run -d --name termincount --network your-db-network \
+docker run -d --name termincount_app --network your-db-network \
   --restart unless-stopped --init --read-only --cap-drop ALL \
   --security-opt no-new-privileges:true \
   -p 127.0.0.1:8080:3000 \
   -e DATABASE_URL='postgres://user:password@your-db-host:5432/your-db-name' \
   -e ORIGIN='http://localhost:8080' \
-  termindiego25/termincount:1.4.0
+  termindiego25/termincount:1.5.0
 ```
 
 The connection string is an example: use your actual host/credentials, percent-encode reserved characters, and prefer `DATABASE_URL_FILE` or the individual `DB_*_FILE` variables with mounted secrets. Compose is the simpler deployment for most installations.
 
-Image tags are `1.4.0` (this release), `1.4` (the release series), and `latest` (the current published release). Fix an exact version or digest for controlled upgrades. The image supports linux/amd64 and linux/arm64 and runs as UID/GID 10001 on container port 3000. It uses Node 26 Current copied into scratch; rebuilding is still necessary to receive runtime/library security updates. ARM32 users must keep the older `1.3.2` image: official Node 26 images no longer provide linux/arm/v7.
+App image tags are `1.5.0` (this release), `1.5` (the release series), and `latest`. The separate database image is `termindiego25/termincount:postgres-18.6-1.5.0`; it does not replace the app's `latest` tag. Fix an exact version or digest for controlled upgrades. Both images support linux/amd64 and linux/arm64. The app runs as UID/GID 10001 on container port 3000 and uses Node 26 Current copied into scratch; rebuilding is still necessary to receive runtime/library security updates. ARM32 users must keep the older `1.3.2` image: official Node 26 images no longer provide linux/arm/v7.
 
 ## Configuration
 
@@ -92,7 +93,7 @@ Use KEY=value in env files. `termincount.env` holds app settings and credential-
 | --- | --- | --- |
 | `ORIGIN` | unset; local example uses `http://localhost:8080` | Browser-facing scheme + host + optional port, without credentials, path, query or fragment. Set explicitly for HTTP and HTTPS deployments. TerminCount preserves this runtime setting with adapter-node 6. |
 | `DATABASE_URL` / `DATABASE_URL_FILE` | assembled from DB settings | Complete PostgreSQL URL or file containing it. Takes precedence over individual settings. |
-| `DB_HOST` | `127.0.0.1` | Database hostname; set `db` in the default Compose or `termincount_db` in the Traefik example. IPv6 hosts are supported. |
+| `DB_HOST` | `127.0.0.1` | Database hostname; use `termincount_db` in either Compose example. IPv6 hosts are supported. |
 | `DB_PORT` | `5432` | Database port. |
 | `DB_NAME` / `DB_NAME_FILE` | `termincount` | Database name or secret-file path. |
 | `DB_USER` / `DB_USER_FILE` | `termincount` | Database user or secret-file path. |
@@ -103,7 +104,7 @@ Use KEY=value in env files. `termincount.env` holds app settings and credential-
 | `HOST` / `PORT` | `0.0.0.0` / `3000` in Docker | Internal listening address/port. |
 | `BODY_SIZE_LIMIT` | `16K` in Docker | Node adapter request limit; JSON endpoints also reject oversized declared payloads. |
 | `SHUTDOWN_TIMEOUT` | `30` seconds | Node adapter grace period for connections during shutdown. |
-| `TERMINCOUNT_VERSION` | `1.4.0` in Compose | Image tag, supplied through the shell/project .env. |
+| `TERMINCOUNT_VERSION` | `1.5.0` in Compose | App image tag, supplied through the shell/project .env. |
 | `TERMINCOUNT_PORT` / `POSTGRES_PORT` | `8080` / `5432` in default Compose | Loopback host ports, supplied through the shell/project .env; absent from the Traefik Compose. |
 
 An explicit environment value wins over its `_FILE` variant. `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` (also `_FILE`) are supported as legacy database-setting aliases. PostgreSQL's own `POSTGRES_*_FILE` initialization values are set in postgresql.env.
@@ -112,7 +113,9 @@ The project `.env` provides Compose substitutions. A service's env_file provides
 
 ## Persistence, backups, and scaling
 
-Polls, options, vote events, owner-session hashes, and expiry dates are stored in PostgreSQL. App containers can be replaced or replicated using the same database and public ORIGIN. Notifications reach every replica; sticky sessions are unnecessary. PostgreSQL itself remains a single availability dependency unless you separately configure database HA.
+Polls, options, vote events, mutation receipts, owner-session hashes, and expiry dates are stored in PostgreSQL. The browser queues actions in order and retries ambiguous responses with the same receipt key; with sessionStorage available, a reload of that tab resumes pending work. This is not an offline voting mode: wait for confirmation and do not clear browser storage with a pending action.
+
+App containers can be replaced or replicated using the same database and public ORIGIN. Notifications reach every replica; sticky sessions are unnecessary. The supplied Compose intentionally uses fixed container names and cannot use `--scale` unchanged: replicas need distinct names/an override and a load balancer. PostgreSQL itself remains a single availability dependency unless you separately configure database HA.
 
 Back up a live database with pg_dump. An offline folder copy is valid only after PostgreSQL is stopped and file permissions are preserved. Back up configuration/secrets securely and test a restore into a separate installation. The provided server configuration alone is not a data backup. Detailed commands are in [Operations](docs/OPERATIONS.md).
 
@@ -129,7 +132,7 @@ Use Node 26.11.1+ and npm 12.2.0. For a local database and dev server:
 ```bash
 npm ci
 cp .env.example .env
-docker compose up -d db
+docker compose up -d termincount_db
 npm run dev
 ```
 
@@ -143,11 +146,11 @@ npm run test:e2e
 npm audit
 ```
 
-Use a dedicated test database. E2E/API tests start three app instances on 4173-4175 with single-connection pools and exercise ownership, input limits, concurrent writes, expiration, listener recovery, live results, HTTP/HTTPS proxy configuration, and mobile layout. Set DATABASE_URL in your shell when the test database differs from the example.
+Use a dedicated test database. E2E/API tests start three app instances on 4173, 4174 and 4176 with single-connection pools and exercise ownership, input limits, concurrent writes, retry deduplication, lost responses, pending-action recovery, expiration under locks, result navigation, listener recovery, live results, HTTP/HTTPS proxy configuration, and mobile layout. Set DATABASE_URL in your shell when the test database differs from the example.
 
-For a local image, `docker build -t termindiego25/termincount:1.4.0 .` builds from the current source. Release/export/publishing instructions and SBOM/provenance handling are documented separately for [Maintainers](docs/MAINTAINERS.md).
+For local images, `docker build -t termindiego25/termincount:1.5.0 .` and `docker build -f deploy/postgres/Dockerfile -t termindiego25/termincount:postgres-18.6-1.5.0 .` build from the current source. Release/export/publishing instructions and SBOM/provenance handling are documented separately for [Maintainers](docs/MAINTAINERS.md).
 
-The application dependencies use current releases except TypeScript: the latest SvelteKit and svelte-check still require version 6, so TypeScript 7 cannot be installed without bypassing their compatibility constraints. Known vulnerabilities are checked independently from version freshness. Node 26 is Current, not LTS, and requires following its subsequent release/support cycle.
+Type checking uses TypeScript 7 through the official svelte-check `--tsgo` integration and `@typescript/native` alias. TypeScript 6 remains only as the compatibility library required by SvelteKit/checker's existing JavaScript APIs; no peer constraints are bypassed. npm's bundled node-gyp/Undici are updated together. See [Dependency review](docs/DEPENDENCIES.md) for exact versions, scan scope and unresolved upstream findings. Node 26 is Current, not LTS, and requires following its subsequent release/support cycle.
 
 ## Project structure
 

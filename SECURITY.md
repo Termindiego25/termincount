@@ -1,6 +1,6 @@
 # Security Policy
 
-Security fixes are provided for the current 1.4 release series. Install the latest patch release and rebuild/pull images regularly to receive runtime updates. This series uses Node 26 Current rather than LTS; keep track of its shorter support cycle and subsequent Node releases.
+Security fixes are provided for the current 1.5 release series. Install the latest patch release and rebuild/pull images regularly to receive runtime updates. This series uses Node 26 Current rather than LTS; keep track of its shorter support cycle and subsequent Node releases.
 
 Report vulnerabilities through the repository's private GitHub vulnerability reporting facility when enabled, or email diego@diegosr.es. Do not include credentials, owner cookies, database dumps, or private poll links in public issues.
 
@@ -11,3 +11,5 @@ Run behind HTTPS, keep PostgreSQL private, protect secret files and backups, and
 Dependency audits and container scans report known issues at the time of scanning; they are not a guarantee that the application is free of vulnerabilities.
 
 Scan the PostgreSQL image separately from the TerminCount image. Official database images can include flagged operating-system libraries and startup helpers even when PostgreSQL itself is current. Review the affected component and reachable code paths, apply upstream updates when available, and retain network isolation. A clean application-image scan does not establish a clean deployment; do not suppress findings merely to obtain a passing badge.
+
+The refreshed database image still has unresolved upstream libxml2 findings in Alpine 3.24. They are documented in [Dependency review](docs/DEPENDENCIES.md), not suppressed. Do not expose the database port publicly or use it as an untrusted SQL/XML processing service. Restrict host/secret access and follow upstream fixes. Network isolation reduces exposure; it does not remove a vulnerability.

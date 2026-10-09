@@ -1,5 +1,33 @@
 import { expect, test } from '@playwright/test';
 
+test('supports keyboard navigation and focus return in the theme menu', async ({ page }) => {
+	await page.goto('/');
+	const trigger = page.locator('[data-action="theme-menu"]');
+	await trigger.focus();
+	await page.keyboard.press('Enter');
+	await expect(page.locator('[data-theme-choice="auto"]')).toBeFocused();
+	await page.keyboard.press('ArrowDown');
+	await expect(page.locator('[data-theme-choice="light"]')).toBeFocused();
+	await page.keyboard.press('End');
+	await expect(page.locator('[data-theme-choice="dark"]')).toBeFocused();
+	await page.keyboard.press('Enter');
+	await expect(trigger).toBeFocused();
+	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+	await page.keyboard.press('Enter');
+	await page.keyboard.press('Escape');
+	await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+	await expect(trigger).toBeFocused();
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.locator('.menu-toggle').click();
+	await trigger.click();
+	await page.keyboard.press('Escape');
+	await expect(page.locator('.menu-toggle')).toHaveAttribute('aria-expanded', 'true');
+	await expect(trigger).toBeFocused();
+	await page.keyboard.press('Escape');
+	await expect(page.locator('.menu-toggle')).toHaveAttribute('aria-expanded', 'false');
+	await expect(page.locator('.menu-toggle')).toBeFocused();
+});
+
 test('creates a shareable default count and supports owner shortcuts', async ({ page }) => {
 	await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
 	await page.goto('/');
