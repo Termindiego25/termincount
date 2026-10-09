@@ -1,7 +1,7 @@
-import { error, json } from '@sveltejs/kit';
-import { recordVote } from '$lib/server/polls';
-import { assertSameOrigin, readJsonBody } from '$lib/server/security';
-import { getSessionHash } from '$lib/server/session';
+import { error } from '@sveltejs/kit';
+import { recordVote } from '#lib/server/polls.js';
+import { assertSameOrigin, readJsonBody } from '#lib/server/security.js';
+import { getSessionHash } from '#lib/server/session.js';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async (event) => {
@@ -17,5 +17,5 @@ export const POST: RequestHandler = async (event) => {
 	}
 
 	const poll = await recordVote(event.params.id, index, sessionHash);
-	return json({ poll });
+	return Response.json({ poll });
 };

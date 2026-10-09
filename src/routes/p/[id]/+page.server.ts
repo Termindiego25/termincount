@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
-import { getPoll } from '$lib/server/polls';
-import { getSessionHash } from '$lib/server/session';
+import { getPublicOrigin } from '#lib/server/public-origin.js';
+import { getPoll } from '#lib/server/polls.js';
+import { getSessionHash } from '#lib/server/session.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ cookies, params, url }) => {
@@ -12,6 +13,6 @@ export const load: PageServerLoad = async ({ cookies, params, url }) => {
 	return {
 		poll: snapshot.poll,
 		canManage: Boolean(sessionHash && sessionHash === snapshot.ownerSessionHash),
-		shareUrl: `${url.origin}/p/${snapshot.poll.id}`
+		shareUrl: `${getPublicOrigin(url)}/p/${snapshot.poll.id}`
 	};
 };

@@ -1,15 +1,15 @@
 import { randomBytes } from 'node:crypto';
 import type pg from 'pg';
 import { error } from '@sveltejs/kit';
-import { isLanguage, type Language } from '$lib/i18n';
-import type { CreatePollPayload, PollOptionResult, PollResult } from '$lib/polls';
+import { isLanguage, type Language } from '#lib/i18n.js';
+import type { CreatePollPayload, PollOptionResult, PollResult } from '#lib/polls.js';
 import {
 	BAR_COLORS,
 	MAX_OPTIONS,
 	createCustomPoll,
 	createDefaultPoll,
 	type Poll
-} from '$lib/voting';
+} from '#lib/voting.js';
 import { getRetentionDays } from './config';
 import { ensureDatabase, pool, POLL_UPDATE_CHANNEL } from './db';
 

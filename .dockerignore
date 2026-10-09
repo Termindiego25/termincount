@@ -3,6 +3,9 @@
 .svelte-kit
 build
 node_modules
+**/node_modules
+.npmrc
+**/.npmrc
 playwright-report
 test-results
 coverage

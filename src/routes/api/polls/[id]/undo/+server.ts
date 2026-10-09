@@ -1,7 +1,7 @@
-import { error, json } from '@sveltejs/kit';
-import { undoLastVote } from '$lib/server/polls';
-import { assertSameOrigin } from '$lib/server/security';
-import { getSessionHash } from '$lib/server/session';
+import { error } from '@sveltejs/kit';
+import { undoLastVote } from '#lib/server/polls.js';
+import { assertSameOrigin } from '#lib/server/security.js';
+import { getSessionHash } from '#lib/server/session.js';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async (event) => {
@@ -11,5 +11,5 @@ export const POST: RequestHandler = async (event) => {
 	if (!sessionHash) error(403, 'This session cannot modify the poll.');
 
 	const poll = await undoLastVote(event.params.id, sessionHash);
-	return json({ poll });
+	return Response.json({ poll });
 };

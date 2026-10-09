@@ -1,6 +1,6 @@
-import type { Handle } from '@sveltejs/kit';
-import { closeDatabase } from '$lib/server/db';
-import { closeRealtimeListener } from '$lib/server/realtime';
+import type { Handle } from '@sveltejs/kit/hooks';
+import { closeDatabase } from '#lib/server/db.js';
+import { closeRealtimeListener } from '#lib/server/realtime.js';
 
 process.once('sveltekit:shutdown', async () => {
 	await closeRealtimeListener();

@@ -1,6 +1,6 @@
 # Security Policy
 
-Security fixes are provided for the current 1.3 release series. Install the latest patch release and rebuild/pull images regularly to receive runtime updates.
+Security fixes are provided for the current 1.4 release series. Install the latest patch release and rebuild/pull images regularly to receive runtime updates. This series uses Node 26 Current rather than LTS; keep track of its shorter support cycle and subsequent Node releases.
 
 Report vulnerabilities through the repository's private GitHub vulnerability reporting facility when enabled, or email diego@diegosr.es. Do not include credentials, owner cookies, database dumps, or private poll links in public issues.
 
