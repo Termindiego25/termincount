@@ -43,7 +43,7 @@ Edit the password secret before starting. Keep `ORIGIN=http://localhost:8080` fo
 docker compose up -d
 ```
 
-Open [http://localhost:8080](http://localhost:8080). The default Compose uses the published `1.3.1` image and PostgreSQL 18. Its host ports bind to loopback: other computers must use a reverse proxy or an explicitly configured host binding. Database files persist in `./data/postgres`; credentials are mounted as Docker Secrets.
+Open [http://localhost:8080](http://localhost:8080). The default Compose uses the published `1.3.2` image and PostgreSQL 18. Its host ports bind to loopback: other computers must use a reverse proxy or an explicitly configured host binding. Database files persist in `./data/postgres`; credentials are mounted as Docker Secrets.
 
 On PowerShell, the same `cp` commands are available as aliases for `Copy-Item`. Docker and Docker Compose are required; Node/npm are only needed for development or building from source.
 
@@ -77,12 +77,12 @@ docker run -d --name termincount --network your-db-network \
   -p 127.0.0.1:8080:3000 \
   -e DATABASE_URL='postgres://user:password@your-db-host:5432/your-db-name' \
   -e ORIGIN='http://localhost:8080' \
-  termindiego25/termincount:1.3.1
+  termindiego25/termincount:1.3.2
 ```
 
 The connection string is an example: use your actual host/credentials, percent-encode reserved characters, and prefer `DATABASE_URL_FILE` or the individual `DB_*_FILE` variables with mounted secrets. Compose is the simpler deployment for most installations.
 
-Image tags are `1.3.1` (this patch), `1.3` (the compatible series), and `latest` (the current published release). Fix an exact version or digest for controlled upgrades. The image supports linux/amd64, linux/arm64, and linux/arm/v7 and runs as UID/GID 10001 on container port 3000. It uses a patched Node 22 runtime copied into scratch; rebuilding is still necessary to receive runtime/library security updates.
+Image tags are `1.3.2` (this patch), `1.3` (the compatible series), and `latest` (the current published release). Fix an exact version or digest for controlled upgrades. The image supports linux/amd64, linux/arm64, and linux/arm/v7 and runs as UID/GID 10001 on container port 3000. It uses a patched Node 22 runtime copied into scratch; rebuilding is still necessary to receive runtime/library security updates.
 
 ## Configuration
 
@@ -103,7 +103,7 @@ Use KEY=value in env files. `termincount.env` holds app settings and credential-
 | `HOST` / `PORT` | `0.0.0.0` / `3000` in Docker | Internal listening address/port. |
 | `BODY_SIZE_LIMIT` | `16K` in Docker | Node adapter request limit; JSON endpoints also reject oversized declared payloads. |
 | `SHUTDOWN_TIMEOUT` | `30` seconds | Node adapter grace period for connections during shutdown. |
-| `TERMINCOUNT_VERSION` | `1.3.1` in Compose | Image tag, supplied through the shell/project .env. |
+| `TERMINCOUNT_VERSION` | `1.3.2` in Compose | Image tag, supplied through the shell/project .env. |
 | `TERMINCOUNT_PORT` / `POSTGRES_PORT` | `8080` / `5432` in default Compose | Loopback host ports, supplied through the shell/project .env; absent from the Traefik Compose. |
 
 An explicit environment value wins over its `_FILE` variant. `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` (also `_FILE`) are supported as legacy database-setting aliases. PostgreSQL's own `POSTGRES_*_FILE` initialization values are set in postgresql.env.
@@ -145,7 +145,7 @@ npm audit
 
 Use a dedicated test database. E2E/API tests start two app instances on 4173/4174 with single-connection pools and exercise ownership, input limits, concurrent writes, expiration, listener recovery, live results, and mobile layout. Set DATABASE_URL in your shell when the test database differs from the example.
 
-For a local image, `docker build -t termindiego25/termincount:1.3.1 .` builds from the current source. Release/export/publishing instructions and SBOM/provenance handling are documented separately for [Maintainers](docs/MAINTAINERS.md).
+For a local image, `docker build -t termindiego25/termincount:1.3.2 .` builds from the current source. Release/export/publishing instructions and SBOM/provenance handling are documented separately for [Maintainers](docs/MAINTAINERS.md).
 
 ## Project structure
 

@@ -4,7 +4,7 @@ Release commands belong here rather than in the user-facing README.
 
 1. Update package.json, package-lock.json, the Docker VERSION default, Compose image defaults, and the changelog. Keep the package manager version consistent with Docker.
 2. Run `npm ci`, `npm test`, `npm run build`, `npm run test:e2e`, and `npm audit`. Review container scan results for the exported runtime image. The runtime copies Node and its shared libraries into scratch; it still needs rebuilding when Node or Alpine publishes fixes.
-3. Commit the reviewed files, create an annotated `v1.3.1` tag, and push the commit/tag to GitHub. Do not rebuild a release from an uncommitted working tree.
+3. Commit the reviewed files, create an annotated tag matching package.json (currently `v1.3.2`), and push the commit/tag to GitHub. Do not rebuild a release from an uncommitted working tree.
 4. Create a docker-container builder once if needed:
 
    ```bash

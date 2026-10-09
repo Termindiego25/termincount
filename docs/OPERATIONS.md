@@ -43,7 +43,7 @@ Expired polls retain their original expiry dates and may be cleaned on startup. 
 
 ## Upgrading from 1.3.0
 
-Make a verified dump first and record the running image digest/revision. Set the app image to `termindiego25/termincount:1.3.1` and keep the PostgreSQL 18 volume and credentials. Pull and recreate only the app when updating code. Version 1.3.1 uses the existing schema and is compatible with 1.3.0 data/cookies; rollback to the old app image is possible.
+Make a verified dump first and record the running image digest/revision. Set the app image to `termindiego25/termincount:1.3.2` and keep the PostgreSQL 18 volume and credentials. Pull and recreate only the app when updating code. The 1.3.1 and 1.3.2 patches use the existing schema and are compatible with 1.3.0 data/cookies; rollback to the old app image is possible.
 
 When adopting the Traefik Compose example, its database network/container names differ from older setups: stop the original Compose project before starting the replacement, and ensure the external proxy network exists. Preserve data/postgres and secrets. Do not run old and new PostgreSQL containers against the same directory. Keep the original Compose and image digest for rollback.
 

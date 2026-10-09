@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.2 - 2026-10-09
+
+- Include global styles in the initial server-rendered HTML instead of waiting for client-side JavaScript.
+- Add a regression check for styled, overflow-free initial rendering with JavaScript disabled.
+
+No data, cookie, schema, or configuration migration is required from 1.3.1.
+
 ## 1.3.1 - 2026-10-09
 
 - Update compatible SvelteKit, Svelte, Vite, PostgreSQL client, and browser-test dependencies; track the npm lockfile for reproducible builds.

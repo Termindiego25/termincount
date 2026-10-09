@@ -1,6 +1,6 @@
 {
   "name": "termincount",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "private": true,
   "description": "Shareable live vote counter web app built with SvelteKit and PostgreSQL.",
   "author": "Termindiego25",
