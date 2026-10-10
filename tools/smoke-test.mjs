@@ -104,6 +104,7 @@ check(appEnv.DB_PASSWORD_FILE === '/run/secrets/db_password', 'App env file shou
 for (const deployment of [compose, traefikCompose]) {
 	check(/container_name: termincount_app/.test(deployment) && /container_name: termincount_db/.test(deployment), 'Service container names should use the termincount_ prefix.');
 	check(!/^\s+environment:/m.test(deployment), 'Runtime settings should stay in service env files.');
+	check(!/^\s+init:\s*true/m.test(deployment), 'The single-process Node server should not depend on an external Docker init executable.');
 	check(/- postgresql\.env/.test(deployment) && /- termincount\.env/.test(deployment), 'Compose should load both service env files.');
 	check((deployment.match(/- db_password/g) || []).length === 2, 'Both services should mount the database password secret.');
 }

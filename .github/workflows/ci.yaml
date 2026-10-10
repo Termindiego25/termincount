@@ -60,14 +60,14 @@ jobs:
       - name: Build and check the actual container runtime
         run: |
           docker build --pull -t termincount:ci .
-          docker run -d --name termincount-ci --network host --init --read-only \
+          docker run -d --name termincount-ci --network host --read-only \
             --cap-drop ALL --security-opt no-new-privileges:true \
             -e DATABASE_URL=postgres://termincount:termincount@127.0.0.1:5432/termincount \
             -e ORIGIN=http://localhost:3000 termincount:ci
           for attempt in $(seq 1 20); do
             if curl --fail --silent http://localhost:3000/healthz >/dev/null; then
               docker exec termincount-ci node --version
-              docker stop termincount-ci
+              node tools/check-container-shutdown.mjs termincount-ci http://localhost:3000
               exit 0
             fi
             sleep 2
