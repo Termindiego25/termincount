@@ -285,7 +285,7 @@ function serializePoll(row: PollRow, options: OptionRow[]): PollResult {
 		id: row.id,
 		title: row.title,
 		revision: String(row.last_event_id),
-		language: row.language,
+		language: isLanguage(row.language) ? row.language : 'en',
 		isDefault: row.is_default,
 		createdAt: new Date(row.created_at).toISOString(),
 		expiresAt: new Date(row.expires_at).toISOString(),

@@ -111,4 +111,3 @@ test('recovers the same pending action after reloading', async ({ page }) => {
 	expect(Number((await db.query('SELECT count(*) FROM vote_events WHERE poll_id = $1', [poll.id])).rows[0].count)).toBe(1);
 	await expect.poll(() => page.evaluate((id) => sessionStorage.getItem(`termincount-actions:${id}`), poll.id)).toBeNull();
 });
-

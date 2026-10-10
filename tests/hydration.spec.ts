@@ -20,6 +20,8 @@ test('preserves setup values entered before client hydration', async ({ page }) 
 });
 
 test('preserves an early language selection ahead of the stored preference', async ({ page }) => {
+	// On phones the selector is inside the JS-controlled closed menu; use a visible desktop selector.
+	await page.setViewportSize({ width: 1280, height: 900 });
 	await page.addInitScript(() => localStorage.setItem('termincount.lang', 'es'));
 	let release: () => void = () => {};
 	const ready = new Promise<void>((resolve) => { release = resolve; });

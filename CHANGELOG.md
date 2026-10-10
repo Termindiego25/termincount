@@ -6,6 +6,7 @@
 - Preserve the adapter's native graceful shutdown; verify signal handling with an active live-result stream.
 - Drain live streams as soon as shutdown starts, rather than waiting for the adapter's 30-second forced connection deadline.
 - Preserve a language selected before hydration instead of reverting it to the stored preference.
+- Validate locales against dictionary own keys and normalize unsupported legacy locale values when reading polls.
 
 No schema, cookie or poll URL changes from 1.5.0. This patch does not change host/Docker permissions or the unresolved upstream database findings.
 

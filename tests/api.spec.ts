@@ -2,6 +2,16 @@ import { expect, test } from '@playwright/test';
 import pg from 'pg';
 
 const origin = 'http://127.0.0.1:4173';
+
+test('treats inherited object keys as unsupported languages', async ({ request }) => {
+	for (const language of ['constructor', '__proto__', 'toString']) {
+		const response = await request.post('/api/polls', { headers: { origin }, data: { language } });
+		expect(response.status()).toBe(201);
+		const { poll } = await response.json();
+		expect(poll.language).toBe('en');
+		expect((await request.get(`/p/${poll.id}`)).status()).toBe(200);
+	}
+});
 const db = new pg.Pool({ connectionString: process.env.DATABASE_URL ?? 'postgres://termincount:termincount@127.0.0.1:5432/termincount' });
 test.afterAll(() => db.end());
 

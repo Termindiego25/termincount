@@ -284,7 +284,7 @@ export const dictionaries: Record<Language, Dictionary> = {
 };
 
 export function isLanguage(value: string | null | undefined): value is Language {
-	return Boolean(value && value in dictionaries);
+	return Boolean(value && Object.hasOwn(dictionaries, value));
 }
 
 export function detectLanguage(navigatorLanguage: string | undefined, stored: string | null): Language {
