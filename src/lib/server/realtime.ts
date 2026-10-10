@@ -13,8 +13,10 @@ const subscribers = new Map<string, Set<Subscriber>>();
 const refreshing = new Map<string, { dirty: boolean; promise: Promise<void> }>();
 let listenerClient: pg.Client | null = null;
 let listenerPromise: Promise<void> | null = null;
+let draining = false;
 
 export async function ensureRealtimeListener(): Promise<void> {
+	if (draining) throw new Error('Realtime service is shutting down.');
 	if (!listenerPromise) {
 		listenerPromise = startListener().catch((error) => {
 			listenerPromise = null;
@@ -90,6 +92,7 @@ function disconnectPoll(pollId: string): void {
 }
 
 export async function closeRealtimeListener(): Promise<void> {
+	draining = true;
 	const client = listenerClient;
 	listenerClient = null;
 	listenerPromise = null;

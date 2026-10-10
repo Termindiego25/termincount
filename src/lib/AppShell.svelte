@@ -3,6 +3,7 @@
 	import { onMount, tick } from 'svelte';
 	import {
 		detectLanguage,
+		isLanguage,
 		languages,
 		translate,
 		type Language
@@ -11,6 +12,7 @@
 
 	export let currentLang: Language = 'es';
 	export let onHome: (() => void) | undefined = undefined;
+	const earlyLanguage = readEarlyLanguage();
 
 	const languageStorageKey = 'termincount.lang';
 	const themeStorageKey = 'termincount.theme';
@@ -34,6 +36,14 @@
 
 	function t(lang: Language, key: string, params?: Record<string, string | number>): string {
 		return translate(lang, key, params);
+	}
+
+	function readEarlyLanguage(): Language | undefined {
+		if (!browser) return;
+		const select = document.getElementById('lang-select');
+		if (!(select instanceof HTMLSelectElement)) return;
+		const initial = Array.from(select.options).find((option) => option.defaultSelected)?.value;
+		if (select.value !== initial && isLanguage(select.value)) return select.value;
 	}
 
 	function readStorage(key: string): string | null {
@@ -156,7 +166,8 @@
 	}
 
 	onMount(() => {
-		currentLang = detectLanguage(navigator.language, readStorage(languageStorageKey) ?? currentLang);
+		currentLang = detectLanguage(navigator.language, earlyLanguage ?? readStorage(languageStorageKey) ?? currentLang);
+		if (earlyLanguage) writeStorage(languageStorageKey, earlyLanguage);
 		prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
 		const storedTheme = readStorage(themeStorageKey) || readStorage('ts-theme');
 		const initialTheme = storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : 'auto';

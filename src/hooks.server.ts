@@ -1,11 +1,22 @@
 import type { Handle } from '@sveltejs/kit/hooks';
+import { dev } from '$app/env';
 import { closeDatabase } from '#lib/server/db.js';
 import { closeRealtimeListener } from '#lib/server/realtime.js';
 
-process.once('sveltekit:shutdown', async () => {
-	await closeRealtimeListener();
-	await closeDatabase();
-});
+let realtimeShutdown: Promise<void> | undefined;
+const stopRealtime = () => realtimeShutdown ??= closeRealtimeListener();
+if (!dev) {
+	for (const signal of ['SIGTERM', 'SIGINT'] as const) {
+		// Close streams before HTTP draining, without accumulating handlers during Vite HMR.
+		process.once(signal, () => {
+			void stopRealtime().catch((error) => console.error('Realtime shutdown failed', error.message));
+		});
+	}
+	process.once('sveltekit:shutdown', async () => {
+		await stopRealtime();
+		await closeDatabase();
+	});
+}
 
 export const handle: Handle = async ({ event, resolve }) => {
 	const response = await resolve(event);

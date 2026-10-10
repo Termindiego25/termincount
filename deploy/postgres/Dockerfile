@@ -23,7 +23,7 @@ STOPSIGNAL SIGINT
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["postgres"]
 
-ARG VERSION=1.5.0
+ARG VERSION=1.5.1
 ARG VCS_REF=unknown
 ARG BUILD_DATE=unknown
 LABEL org.opencontainers.image.title="TerminCount PostgreSQL" \

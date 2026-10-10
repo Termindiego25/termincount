@@ -67,9 +67,13 @@ The Compose service and container names are now `termincount_app` and `termincou
 
 Before replacing the old Compose, stop the old app, take and validate a fresh dump with the **old** database service name, and save its Compose/env files and both running image digests. Download and validate the new Compose separately. Pull both new images before stopping PostgreSQL; then stop/remove the old containers without deleting volumes or data, install the new Compose and start it. Never start a second database container on the same data directory. Keep the database's initialization credentials unchanged for this update.
 
-The refreshed `postgres-18.6-1.5.0` image derives from official PostgreSQL 18.6 Alpine 3.24. It upgrades available APK packages and replaces the old Go-built gosu binary with Alpine's su-exec 0.3, retaining the upstream entrypoint, UID, PGDATA and locale settings. It is not a different PostgreSQL major or an Alpine-to-Debian migration. A backup and recovery test are still required; do not assume an old Alpine branch is equivalent just because its engine also says 18.6. See [Dependency review](DEPENDENCIES.md) for unresolved libxml2 findings.
+The refreshed `postgres-18.6-1.5.1` image derives from official PostgreSQL 18.6 Alpine 3.24. It upgrades available APK packages and replaces the old Go-built gosu binary with Alpine's su-exec 0.3, retaining the upstream entrypoint, UID, PGDATA and locale settings. It is not a different PostgreSQL major or an Alpine-to-Debian migration. A backup and recovery test are still required; do not assume an old Alpine branch is equivalent just because its engine also says 18.6. See [Dependency review](DEPENDENCIES.md) for unresolved libxml2 findings.
 
 Poll expiry uses the database wall clock after row locks are acquired. Cleanup runs in background batches of 100 polls, skipping locked rows and yielding between transactions. Logical expiry does not wait for cleanup; skipped rows are retried at the next interval. Graceful shutdown waits for an active cleanup job.
+
+### Rootless init failure
+
+An exit code 126 with `exec: "/sbin/docker-init": permission denied` occurs before Node starts. This is not an application exception or database error. TerminCount does not spawn child processes and does not need an external init/reaper: from 1.5.1 its Compose and direct-run examples omit `init: true` / `--init`. Node handles SIGTERM/SIGINT through the adapter, immediately drains live streams, waits for ordinary requests/database work and exits directly. CI verifies a clean SSE end and exit code zero in less than ten seconds, without an external init. Keep the Compose stop grace period longer than the adapter's shutdown timeout. Do not make Docker's files world-writable to work around this failure.
 
 ## Rotating a database password
 

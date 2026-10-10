@@ -44,7 +44,7 @@ Edit the password secret before starting. Keep `ORIGIN=http://localhost:8080` fo
 docker compose up -d
 ```
 
-Open [http://localhost:8080](http://localhost:8080). The default Compose uses the `1.5.0` app and our refreshed PostgreSQL 18.6 image. Service/container names are `termincount_app` and `termincount_db`; each uses its own env file. Host ports bind to loopback: other computers must use a reverse proxy or an explicitly configured host binding. Database files persist in `./data/postgres`; credentials are mounted as Docker Secrets. Read the [dependency review](docs/DEPENDENCIES.md) for the database image's remaining upstream security findings.
+Open [http://localhost:8080](http://localhost:8080). The default Compose uses the `1.5.1` app and our refreshed PostgreSQL 18.6 image. Service/container names are `termincount_app` and `termincount_db`; each uses its own env file. Host ports bind to loopback: other computers must use a reverse proxy or an explicitly configured host binding. Database files persist in `./data/postgres`; credentials are mounted as Docker Secrets. Read the [dependency review](docs/DEPENDENCIES.md) for the database image's remaining upstream security findings.
 
 On PowerShell, the same `cp` commands are available as aliases for `Copy-Item`. Docker and Docker Compose are required; Node/npm are only needed for development or building from source.
 
@@ -73,17 +73,17 @@ Provide an existing PostgreSQL database. When the database is another container,
 
 ```bash
 docker run -d --name termincount_app --network your-db-network \
-  --restart unless-stopped --init --read-only --cap-drop ALL \
+  --restart unless-stopped --read-only --cap-drop ALL \
   --security-opt no-new-privileges:true \
   -p 127.0.0.1:8080:3000 \
   -e DATABASE_URL='postgres://user:password@your-db-host:5432/your-db-name' \
   -e ORIGIN='http://localhost:8080' \
-  termindiego25/termincount:1.5.0
+  termindiego25/termincount:1.5.1
 ```
 
 The connection string is an example: use your actual host/credentials, percent-encode reserved characters, and prefer `DATABASE_URL_FILE` or the individual `DB_*_FILE` variables with mounted secrets. Compose is the simpler deployment for most installations.
 
-App image tags are `1.5.0` (this release), `1.5` (the release series), and `latest`. The separate database image is `termindiego25/termincount:postgres-18.6-1.5.0`; it does not replace the app's `latest` tag. Fix an exact version or digest for controlled upgrades. Both images support linux/amd64 and linux/arm64. The app runs as UID/GID 10001 on container port 3000 and uses Node 26 Current copied into scratch; rebuilding is still necessary to receive runtime/library security updates. ARM32 users must keep the older `1.3.2` image: official Node 26 images no longer provide linux/arm/v7.
+App image tags are `1.5.1` (this release), `1.5` (the release series), and `latest`. The separate database image is `termindiego25/termincount:postgres-18.6-1.5.1`; it does not replace the app's `latest` tag. Fix an exact version or digest for controlled upgrades. Both images support linux/amd64 and linux/arm64. The app runs as UID/GID 10001 on container port 3000 and uses Node 26 Current copied into scratch; rebuilding is still necessary to receive runtime/library security updates. ARM32 users must keep the older `1.3.2` image: official Node 26 images no longer provide linux/arm/v7.
 
 ## Configuration
 
@@ -104,7 +104,7 @@ Use KEY=value in env files. `termincount.env` holds app settings and credential-
 | `HOST` / `PORT` | `0.0.0.0` / `3000` in Docker | Internal listening address/port. |
 | `BODY_SIZE_LIMIT` | `16K` in Docker | Node adapter request limit; JSON endpoints also reject oversized declared payloads. |
 | `SHUTDOWN_TIMEOUT` | `30` seconds | Node adapter grace period for connections during shutdown. |
-| `TERMINCOUNT_VERSION` | `1.5.0` in Compose | App image tag, supplied through the shell/project .env. |
+| `TERMINCOUNT_VERSION` | `1.5.1` in Compose | App image tag, supplied through the shell/project .env. |
 | `TERMINCOUNT_PORT` / `POSTGRES_PORT` | `8080` / `5432` in default Compose | Loopback host ports, supplied through the shell/project .env; absent from the Traefik Compose. |
 
 An explicit environment value wins over its `_FILE` variant. `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` (also `_FILE`) are supported as legacy database-setting aliases. PostgreSQL's own `POSTGRES_*_FILE` initialization values are set in postgresql.env.
@@ -148,7 +148,7 @@ npm audit
 
 Use a dedicated test database. E2E/API tests start three app instances on 4173, 4174 and 4176 with single-connection pools and exercise ownership, input limits, concurrent writes, retry deduplication, lost responses, pending-action recovery, expiration under locks, result navigation, listener recovery, live results, HTTP/HTTPS proxy configuration, and mobile layout. Set DATABASE_URL in your shell when the test database differs from the example.
 
-For local images, `docker build -t termindiego25/termincount:1.5.0 .` and `docker build -f deploy/postgres/Dockerfile -t termindiego25/termincount:postgres-18.6-1.5.0 .` build from the current source. Release/export/publishing instructions and SBOM/provenance handling are documented separately for [Maintainers](docs/MAINTAINERS.md).
+For local images, `docker build -t termindiego25/termincount:1.5.1 .` and `docker build -f deploy/postgres/Dockerfile -t termindiego25/termincount:postgres-18.6-1.5.1 .` build from the current source. Release/export/publishing instructions and SBOM/provenance handling are documented separately for [Maintainers](docs/MAINTAINERS.md).
 
 Type checking uses TypeScript 7 through the official svelte-check `--tsgo` integration and `@typescript/native` alias. TypeScript 6 remains only as the compatibility library required by SvelteKit/checker's existing JavaScript APIs; no peer constraints are bypassed. npm's bundled node-gyp/Undici are updated together. See [Dependency review](docs/DEPENDENCIES.md) for exact versions, scan scope and unresolved upstream findings. Node 26 is Current, not LTS, and requires following its subsequent release/support cycle.
 

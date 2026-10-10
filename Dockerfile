@@ -42,7 +42,7 @@ FROM scratch AS runtime
 
 WORKDIR /app
 
-ARG VERSION=1.5.0
+ARG VERSION=1.5.1
 ARG VCS_REF=unknown
 ARG BUILD_DATE=unknown
 
