@@ -112,21 +112,3 @@ test('recovers the same pending action after reloading', async ({ page }) => {
 	await expect.poll(() => page.evaluate((id) => sessionStorage.getItem(`termincount-actions:${id}`), poll.id)).toBeNull();
 });
 
-test('preserves setup values entered before client hydration', async ({ page }) => {
-	await page.addInitScript(() => localStorage.setItem('termincount.lang', 'en'));
-	let release: () => void = () => {};
-	const ready = new Promise<void>((resolve) => { release = resolve; });
-	await page.route(/\/_app\/.*\.js$/, async (route) => {
-		await ready;
-		await route.continue();
-	});
-	await page.goto('/', { waitUntil: 'commit' });
-	await page.locator('#title').fill('Entered before hydration');
-	await page.locator('#o1').fill('Preserved option');
-	release();
-	await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-	await page.locator('#startPoll').click();
-	await expect(page.locator('#question')).toHaveText('Entered before hydration');
-	await expect(page.locator('.vote-option')).toHaveCount(1);
-	await expect(page.locator('.option-label-text')).toHaveText('Preserved option');
-});

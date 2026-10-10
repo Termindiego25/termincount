@@ -36,7 +36,7 @@ export default defineConfig({
 		},
 		{
 			name: 'webkit-mobile',
-			testMatch: '**/layout.spec.ts',
+			testMatch: ['**/layout.spec.ts', '**/hydration.spec.ts'],
 			use: { ...devices['iPhone 13'] }
 		}
 	]
