@@ -21,6 +21,7 @@ async function exists(filePath) {
 }
 
 const packageJson = JSON.parse(await readFile(fromRoot('package.json'), 'utf8'));
+const nodeVersion = packageJson.engines.node.match(/^>=(\d+\.\d+\.\d+)$/)?.[1];
 const appHtml = await readFile(fromRoot('src', 'app.html'), 'utf8');
 const svelteConfig = await readFile(fromRoot('vite.config.ts'), 'utf8');
 const page = await readFile(fromRoot('src', 'routes', '+page.svelte'), 'utf8');
@@ -49,6 +50,7 @@ check(Boolean(packageJson.devDependencies?.['@playwright/test']), 'Playwright sh
 check(Boolean(packageJson.dependencies?.bootstrap), 'Bootstrap CSS should be a managed dependency.');
 check(Boolean(packageJson.dependencies?.pg), 'PostgreSQL client should be installed.');
 check(Boolean(packageJson.dependencies?.qrcode), 'QR code generation should be installed.');
+check(Boolean(packageJson.dependencies?.undici), 'Patched HTTP web APIs should be a managed runtime dependency.');
 check(Boolean(packageJson.author), 'package.json should include author metadata.');
 check(packageJson.license === 'GPL-3.0', 'package.json should include GPL-3.0 license metadata.');
 check(dockerfile.includes(`ARG NPM_VERSION=${packageJson.packageManager.replace('npm@', '')}`), 'Docker and package npm versions should match.');
@@ -84,8 +86,9 @@ for (const icon of manifest.icons || []) {
 	check(await exists(iconPath), `Manifest icon is missing: ${icon.src}`);
 }
 
-check(/FROM --platform=\$BUILDPLATFORM node:26\.11\.1-alpine3\.24 AS base/.test(dockerfile), 'Dockerfile should use the reviewed Node 26 Alpine for multi-arch builds.');
-check(/FROM node:26\.11\.1-alpine3\.24 AS runtime-base/.test(dockerfile), 'Dockerfile should use a target-platform Node runtime base.');
+check(Boolean(nodeVersion), 'The Node engine should specify the reviewed minimum release.');
+check(dockerfile.includes(`FROM --platform=$BUILDPLATFORM node:${nodeVersion}-alpine3.24 AS base`), 'The multi-arch build base should match the reviewed Node engine.');
+check(dockerfile.includes(`FROM node:${nodeVersion}-alpine3.24 AS runtime-base`), 'The target-platform runtime base should match the reviewed Node engine.');
 check(dockerfile.includes('/usr/lib/libatomic.so.1*'), 'Node 26 runtime should include libatomic.');
 check(!(await exists(fromRoot('svelte.config.js'))), 'Kit 3 should keep configuration in the Vite plugin.');
 check(/FROM scratch AS runtime/.test(dockerfile), 'Dockerfile should use a minimal scratch runtime image.');
@@ -95,6 +98,8 @@ check(/PORT=3000/.test(dockerfile), 'Dockerfile should use a non-privileged runt
 check(/EXPOSE 3000/.test(dockerfile), 'Dockerfile should expose the non-privileged runtime port.');
 check(/USER 10001:10001/.test(dockerfile), 'Dockerfile should run the runtime image as a non-root user.');
 check(/CMD \["\/usr\/local\/bin\/node", "tools\/server.mjs"\]/.test(dockerfile), 'Dockerfile should use the runtime-origin server entrypoint.');
+check((await readFile(fromRoot('tools', 'server.mjs'), 'utf8')).includes("import './fetch-runtime.mjs'"), 'The production server should install patched web APIs before loading the adapter.');
+check(dockerfile.includes('"--import", "./tools/fetch-runtime.mjs"'), 'The container health check should also use patched web APIs.');
 check(/org\.opencontainers\.image\.version="\$\{VERSION\}"/.test(dockerfile), 'Dockerfile should expose OCI version metadata.');
 check(/org\.opencontainers\.image\.authors=/.test(dockerfile), 'Dockerfile should expose OCI author metadata.');
 check(compose.includes(`termindiego25/termincount:postgres-18.6-${packageJson.version}`), 'Docker Compose should use the reviewed PostgreSQL image.');

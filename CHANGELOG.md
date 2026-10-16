@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Update the Node build/runtime images to 26.12.0 and align the minimum engine and smoke checks.
+- Update SvelteKit to 3.1.0, svelte-check to 4.7.7 and Playwright to 1.64.1.
+- Update the SHA-pinned setup-node action to 7.1.0 and npm's bundled ip-address repair to 10.7.4.
+- Update the compatible npm Undici repair to 8.12.2 and recheck native addon compilation.
+- Install Undici 8.12.2's matching web APIs before development, build and production startup, including container health checks. Node 26.12.0 still embeds the older 8.11.2; the application no longer relies on those globals. Add an uppercase-integrity regression test for the new security fixes.
+
+These source/build updates are not part of the published 1.5.1 images. They do not change the database schema, credentials, poll URLs or production Compose.
+
 ## 1.5.1 - 2026-10-10
 
 - Run the single-process Node server directly, without an unnecessary Docker init binary that can fail to execute under rootless deployments.

@@ -7,7 +7,7 @@
   "license": "GPL-3.0",
   "packageManager": "npm@12.2.0",
   "engines": {
-    "node": ">=26.11.1"
+    "node": ">=26.12.0"
   },
   "homepage": "https://termincount.diegosr.es",
   "repository": {
@@ -22,30 +22,31 @@
     "#lib/*": "./src/lib/*"
   },
   "scripts": {
-    "dev": "vite dev --host 127.0.0.1",
-    "build": "vite build",
+    "dev": "node --import ./tools/fetch-runtime.mjs node_modules/vite/bin/vite.js dev --host 127.0.0.1",
+    "build": "node --import ./tools/fetch-runtime.mjs node_modules/vite/bin/vite.js build",
     "preview": "node tools/server.mjs",
     "check": "svelte-kit sync && node tools/reset-check-cache.mjs && svelte-check --tsgo --fail-on-warnings --tsconfig ./tsconfig.json",
-    "test": "npm run check && node tools/smoke-test.mjs",
+    "test": "npm run check && node tools/smoke-test.mjs && node --test tools/fetch-runtime.test.mjs",
     "test:e2e": "playwright test",
     "release": "node tools/release.mjs"
   },
   "dependencies": {
     "bootstrap": "5.3.8",
     "pg": "8.23.1",
-    "qrcode": "1.5.4"
+    "qrcode": "1.5.4",
+    "undici": "8.12.2"
   },
   "devDependencies": {
     "@typescript/native": "npm:typescript@7.0.2",
-    "@playwright/test": "1.64.0",
+    "@playwright/test": "1.64.1",
     "@sveltejs/adapter-node": "6.0.0",
-    "@sveltejs/kit": "3.0.1",
+    "@sveltejs/kit": "3.1.0",
     "@sveltejs/vite-plugin-svelte": "7.3.1",
     "@types/node": "26.6.5",
     "@types/pg": "8.23.1",
     "@types/qrcode": "1.5.6",
     "svelte": "5.57.2",
-    "svelte-check": "4.7.6",
+    "svelte-check": "4.7.7",
     "typescript": "6.0.3",
     "vite": "8.3.4"
   }
