@@ -37,7 +37,6 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npx playwright install --with-deps chromium webkit
-      - run: npm run test:e2e
       - run: npm audit --audit-level=moderate
       - run: npm audit --prefix tools/npm-bundle --audit-level=moderate
       - name: Verify the patched native build toolchain
@@ -45,18 +44,7 @@ jobs:
       - name: Verify the database image and startup contract
         run: |
           docker build --pull -f deploy/postgres/Dockerfile -t termincount-postgres:ci .
-          docker run -d --name termincount-db-ci --tmpfs /var/lib/postgresql \
-            -e POSTGRES_PASSWORD=fixture-only termincount-postgres:ci
-          for attempt in $(seq 1 20); do
-            if docker exec termincount-db-ci pg_isready -U postgres; then
-              docker exec termincount-db-ci psql -U postgres -Atc 'SELECT version();'
-              docker stop termincount-db-ci
-              exit 0
-            fi
-            sleep 2
-          done
-          docker logs termincount-db-ci
-          exit 1
+          node tools/check-database-migration.mjs termincount-postgres:ci
       - name: Build and check the actual container runtime
         run: |
           docker build --pull -t termincount:ci .

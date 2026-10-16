@@ -48,6 +48,8 @@ Open [http://localhost:8080](http://localhost:8080). The default Compose uses th
 
 On PowerShell, the same `cp` commands are available as aliases for `Copy-Item`. Docker and Docker Compose are required; Node/npm are only needed for development or building from source.
 
+The published 1.5.1 images and Compose defaults are unchanged. The source database Dockerfile now includes an **unreleased Wolfi migration** to repair libxml2. Existing installations must follow the [logical migration procedure](docs/OPERATIONS.md#unreleased-wolfi-database-migration) before adopting that new database image; a routine image swap is not sufficient.
+
 ## Production behind Traefik
 
 Use [deploy/compose.traefik.yaml](deploy/compose.traefik.yaml) as your deployment's docker-compose.yaml. Initialize the environment/secrets as above and create the shared proxy network if it does not exist:
@@ -148,7 +150,7 @@ npm audit
 
 Use a dedicated test database. E2E/API tests start three app instances on 4173, 4174 and 4176 with single-connection pools and exercise ownership, input limits, concurrent writes, retry deduplication, lost responses, pending-action recovery, expiration under locks, result navigation, listener recovery, live results, HTTP/HTTPS proxy configuration, and mobile layout. Set DATABASE_URL in your shell when the test database differs from the example.
 
-For local images, `docker build -t termindiego25/termincount:1.5.1 .` and `docker build -f deploy/postgres/Dockerfile -t termindiego25/termincount:postgres-18.6-1.5.1 .` build from the current source. Release/export/publishing instructions and SBOM/provenance handling are documented separately for [Maintainers](docs/MAINTAINERS.md).
+For local source images, use development tags: `docker build -t termincount:dev .` and `docker build -f deploy/postgres/Dockerfile -t termincount-postgres:dev .`. Run `node tools/check-database-migration.mjs termincount-postgres:dev` to test a disposable legacy-to-new database restore and the browser/API suite. Do not label unreleased source as an existing published release. Release/export/publishing instructions and SBOM/provenance handling are documented separately for [Maintainers](docs/MAINTAINERS.md).
 
 Type checking uses TypeScript 7 through the official svelte-check `--tsgo` integration and `@typescript/native` alias. TypeScript 6 remains only as the compatibility library required by SvelteKit/checker's existing JavaScript APIs; no peer constraints are bypassed. npm's bundled node-gyp/Undici are updated together. See [Dependency review](docs/DEPENDENCIES.md) for exact versions, scan scope and unresolved upstream findings. Node 26 is Current, not LTS, and requires following its subsequent release/support cycle.
 
