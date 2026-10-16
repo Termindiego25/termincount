@@ -127,7 +127,7 @@ For a proxy 404, check router loading/hostname rules. For a 502, check the share
 
 ## Development and checks
 
-Use Node 26.11.1+ and npm 12.2.0. For a local database and dev server:
+Use Node 26.12.0+ and npm 12.2.0. For a local database and dev server:
 
 ```bash
 npm ci

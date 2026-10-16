@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM --platform=$BUILDPLATFORM node:26.11.1-alpine3.24 AS base
+FROM --platform=$BUILDPLATFORM node:26.12.0-alpine3.24 AS base
 
 WORKDIR /app
 
@@ -35,7 +35,7 @@ ENV NODE_ENV=production
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-FROM node:26.11.1-alpine3.24 AS runtime-base
+FROM node:26.12.0-alpine3.24 AS runtime-base
 RUN apk upgrade --no-cache
 
 FROM scratch AS runtime

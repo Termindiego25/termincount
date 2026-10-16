@@ -21,6 +21,7 @@ async function exists(filePath) {
 }
 
 const packageJson = JSON.parse(await readFile(fromRoot('package.json'), 'utf8'));
+const nodeVersion = packageJson.engines.node.match(/^>=(\d+\.\d+\.\d+)$/)?.[1];
 const appHtml = await readFile(fromRoot('src', 'app.html'), 'utf8');
 const svelteConfig = await readFile(fromRoot('vite.config.ts'), 'utf8');
 const page = await readFile(fromRoot('src', 'routes', '+page.svelte'), 'utf8');
@@ -84,8 +85,9 @@ for (const icon of manifest.icons || []) {
 	check(await exists(iconPath), `Manifest icon is missing: ${icon.src}`);
 }
 
-check(/FROM --platform=\$BUILDPLATFORM node:26\.11\.1-alpine3\.24 AS base/.test(dockerfile), 'Dockerfile should use the reviewed Node 26 Alpine for multi-arch builds.');
-check(/FROM node:26\.11\.1-alpine3\.24 AS runtime-base/.test(dockerfile), 'Dockerfile should use a target-platform Node runtime base.');
+check(Boolean(nodeVersion), 'The Node engine should specify the reviewed minimum release.');
+check(dockerfile.includes(`FROM --platform=$BUILDPLATFORM node:${nodeVersion}-alpine3.24 AS base`), 'The multi-arch build base should match the reviewed Node engine.');
+check(dockerfile.includes(`FROM node:${nodeVersion}-alpine3.24 AS runtime-base`), 'The target-platform runtime base should match the reviewed Node engine.');
 check(dockerfile.includes('/usr/lib/libatomic.so.1*'), 'Node 26 runtime should include libatomic.');
 check(!(await exists(fromRoot('svelte.config.js'))), 'Kit 3 should keep configuration in the Vite plugin.');
 check(/FROM scratch AS runtime/.test(dockerfile), 'Dockerfile should use a minimal scratch runtime image.');
