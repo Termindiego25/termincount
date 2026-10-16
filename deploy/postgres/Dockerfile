@@ -1,33 +1,43 @@
 # syntax=docker/dockerfile:1
-FROM postgres:18.6-alpine3.24 AS refreshed
+FROM --platform=$BUILDPLATFORM anchore/syft:v1.54.1 AS sbom-tool
+FROM --platform=$BUILDPLATFORM golang:1.27.2-alpine3.24 AS startup-helper
 
-# Keep the upstream engine, locale, data layout and initialization contract.
-# su-exec 0.3+ is the Alpine alternative documented by gosu's maintainer.
-RUN apk upgrade --no-cache \
-    && apk add --no-cache 'su-exec>=0.3' \
-    && rm /usr/local/bin/gosu \
-    && ln -s /sbin/su-exec /usr/local/bin/gosu \
-    && gosu postgres sh -c 'test "$(id -u)" = 70' \
-    && postgres --version
+ARG TARGETARCH
+WORKDIR /src
+ADD --checksum=sha256:cd9719b775dbfedae53923c9b0dc792b66d42c51e0b36652ed6f747fbadc0164 https://github.com/tianon/gosu/archive/refs/tags/1.19.tar.gz /tmp/gosu.tar.gz
+RUN tar -xzf /tmp/gosu.tar.gz --strip-components=1 -C /src
+COPY tools/gosu-repair/go.mod tools/gosu-repair/go.sum ./
+RUN go mod download all \
+    && go mod verify \
+    && CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH go build -trimpath -ldflags='-s -w' -o /out/gosu .
+COPY --from=sbom-tool /syft /usr/local/bin/syft
+RUN syft scan file:/out/gosu -o spdx-json=/out/gosu.spdx.json
+
+FROM cgr.dev/chainguard/postgres:latest@sha256:4c8ef6bcf82ab05f4cca769d44847809fc069b5113893f3dc68b95983189a874 AS refreshed
+COPY --from=startup-helper /out/gosu /usr/bin/gosu
+COPY --from=startup-helper /out/gosu.spdx.json /var/lib/db/sbom/gosu-1.19-r19.spdx.json
+RUN test "$(postgres --version)" = 'postgres (PostgreSQL) 18.6' \
+    && gosu postgres sh -c 'test "$(id -u)" = 70'
+COPY --chmod=755 deploy/postgres/entrypoint.sh /usr/local/bin/termincount-postgres-entrypoint
 
 FROM scratch
 COPY --from=refreshed / /
 ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
-    LANG=en_US.utf8 \
+    LANG=en_US.UTF-8 \
     PG_MAJOR=18 \
     PG_VERSION=18.6 \
     PGDATA=/var/lib/postgresql/18/docker
 VOLUME /var/lib/postgresql
 EXPOSE 5432
 STOPSIGNAL SIGINT
-ENTRYPOINT ["docker-entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/termincount-postgres-entrypoint"]
 CMD ["postgres"]
 
 ARG VERSION=1.5.1
 ARG VCS_REF=unknown
 ARG BUILD_DATE=unknown
 LABEL org.opencontainers.image.title="TerminCount PostgreSQL" \
-      org.opencontainers.image.description="PostgreSQL 18 with refreshed Alpine packages and su-exec for TerminCount" \
+      org.opencontainers.image.description="PostgreSQL 18 on Wolfi with patched libxml2 and reviewed gosu for TerminCount" \
       org.opencontainers.image.authors="Termindiego25" \
       org.opencontainers.image.source="https://github.com/Termindiego25/termincount" \
       org.opencontainers.image.documentation="https://github.com/Termindiego25/termincount/blob/master/docs/OPERATIONS.md" \

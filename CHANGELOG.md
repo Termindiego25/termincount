@@ -2,13 +2,16 @@
 
 ## Unreleased
 
+- Migrate the database image to digest-pinned Wolfi PostgreSQL 18.6 with libxml2 2.15.4, rebuilding gosu 1.19 with Go 1.27.2 and locked current dependencies instead of retaining the vulnerable helper.
+- Require a verified logical database migration for the libc change; reject legacy clusters without modifying them and test dump/restore, Secret initialization, XML, persistence and the complete browser/API suite.
+- Refresh compatible transitive Rolldown 1.2.14/native bindings/types and PostCSS 8.5.30.
 - Update the Node build/runtime images to 26.12.0 and align the minimum engine and smoke checks.
 - Update SvelteKit to 3.1.0, svelte-check to 4.7.7 and Playwright to 1.64.1.
 - Update the SHA-pinned setup-node action to 7.1.0 and npm's bundled ip-address repair to 10.7.4.
 - Update the compatible npm Undici repair to 8.12.2 and recheck native addon compilation.
 - Install Undici 8.12.2's matching web APIs before development, build and production startup, including container health checks. Node 26.12.0 still embeds the older 8.11.2; the application no longer relies on those globals. Add an uppercase-integrity regression test for the new security fixes.
 
-These source/build updates are not part of the published 1.5.1 images. They do not change the database schema, credentials, poll URLs or production Compose.
+These source/build updates are not part of the published 1.5.1 images. They do not change the database schema, credentials, poll URLs or production Compose. The new database base does require the separately documented logical migration before deployment; an app-only recreate is not sufficient.
 
 ## 1.5.1 - 2026-10-10
 

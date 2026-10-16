@@ -75,6 +75,24 @@ Poll expiry uses the database wall clock after row locks are acquired. Cleanup r
 
 An exit code 126 with `exec: "/sbin/docker-init": permission denied` occurs before Node starts. This is not an application exception or database error. TerminCount does not spawn child processes and does not need an external init/reaper: from 1.5.1 its Compose and direct-run examples omit `init: true` / `--init`. Node handles SIGTERM/SIGINT through the adapter, immediately drains live streams, waits for ordinary requests/database work and exits directly. CI verifies a clean SSE end and exit code zero in less than ten seconds, without an external init. Keep the Compose stop grace period longer than the adapter's shutdown timeout. Do not make Docker's files world-writable to work around this failure.
 
+## Unreleased Wolfi Database Migration
+
+The unpublished database Dockerfile now uses PostgreSQL 18.6 on Wolfi/glibc with libxml2 2.15.4. This replaces the older Alpine/musl database base, not the database engine or application schema. Published `postgres-18.6-1.5.1` remains the old image; no existing tag is overwritten. Do not deploy an unpublished build by treating it as a routine app-only update.
+
+Changing libc can change collation order and invalidate existing indexes even at the same PostgreSQL version. Use a logical dump/restore so indexes are rebuilt by the target library. This migration preserves records, IDs, owner-session hashes and existing expiry timestamps; it does not restore a missing browser cookie or extend retention.
+
+For the eventual release, use this controlled sequence:
+
+1. Pull the separately versioned app/database images and record both old image digests and the exact Compose/env/Secret files. Keep the existing credentials unchanged.
+2. Test a fresh dump in an isolated target database before the maintenance window. The portable local/CI fixture is `node tools/check-database-migration.mjs <new-database-image>`; it uses only its own containers/volumes and synthetic data.
+3. Stop every app replica to quiesce writes, take and verify a final `pg_dump -Fc`, then stop PostgreSQL cleanly. Keep the dump and configuration/Secret backup restricted and off the server as well.
+4. Preserve the complete old `data/postgres` directory, including permissions, in a clearly named rollback location. Provision a new empty `data/postgres` directory for the new image; never delete or overwrite the original, and never mount it into both old and new servers.
+5. Start only the new database with the original initialization Secret files. Restore the final dump using `--no-owner --no-privileges --exit-on-error` for the dedicated TerminCount role, as in the Restore section. For installations with additional custom roles/grants/databases, preserve and migrate those separately instead of discarding their permissions.
+6. Verify the restored records/counts, sequences and owner-session data before starting the app. Then check health, create/vote/undo, the existing owner browser and a separate live viewer. Original expiry dates remain in force; expired polls may be removed normally by cleanup.
+7. Retain the old stopped data directory, final dump, old images and exact configuration until acceptance is complete. Rollback requires stopping the new stack and using the old image with its matching old directory, not putting the old image on the newly created glibc cluster. Writes made after cutover require an explicit reconciliation/restore plan before rollback.
+
+The target refuses an existing cluster unless a `wolfi-glibc-v1` marker exists at `${PGDATA}.termincount-runtime`. New empty clusters create this metadata beside PGDATA before initialization. Do not create/copy a marker onto legacy data to bypass the guard; it cannot repair index order. Preserve the entire `data/postgres` directory, including that marker, for cold physical backups, and pair physical restores with the same reviewed database image.
+
 ## Rotating a database password
 
 After a verified backup, stop only the app and open PostgreSQL's interactive client. Use your database service name:

@@ -7,7 +7,7 @@ Dependency versions rechecked on 2026-10-16. This covers TerminCount's source, b
 | Surface | Reviewed version | Notes |
 | --- | --- | --- |
 | Node | 26.12.0 Current | Latest released version, explicitly selected over LTS; amd64/arm64 images. |
-| Alpine | 3.24.2 / 3.24 repositories | Current stable branch; available APK updates applied during builds. |
+| App/build Alpine | 3.24.2 / 3.24 repositories | Current stable branch; available APK updates applied during builds. |
 | npm | 12.2.0 | Latest npm, with reviewed bundled-library repairs below. |
 | Svelte / SvelteKit | 5.57.2 / 3.1.0 | Latest releases. |
 | adapter-node / Vite plugin | 6.0.0 / 7.3.1 | Runtime ORIGIN preserved by tools/server.mjs. |
@@ -15,13 +15,18 @@ Dependency versions rechecked on 2026-10-16. This covers TerminCount's source, b
 | TypeScript | 7.0.2 compiler + 6.0.3 API bridge | Official alias pattern; no forced peer overrides. |
 | Node types / Playwright | 26.6.5 / 1.64.1 | Latest releases. |
 | pg / Bootstrap CSS / qrcode | 8.23.1 / 5.3.8 / 1.5.4 | Latest releases; no Bootstrap JavaScript or jQuery. |
-| PostgreSQL | 18.6 | Latest stable engine; PostgreSQL 19 is still beta. |
-| PostgreSQL startup helper | su-exec 0.3 | Alpine package replacing the old Go-built gosu. |
+| PostgreSQL | 18.6 | Latest stable engine; PostgreSQL 19 is RC1, not a production stable release. |
+| PostgreSQL base / libxml2 | Wolfi / 2.15.4-r1 | Unreleased migration from the Alpine database image; base pinned by digest. |
+| PostgreSQL startup helper | gosu 1.19 / Go 1.27.2 | Verified upstream source with locked user 0.4.1 / x/sys 0.49.0 repairs. |
+| Helper SBOM generator | Syft 1.54.1 | Build-only; regenerates the inventory from the rebuilt executable. |
+| Transitive build tools | Rolldown 1.2.14 / PostCSS 8.5.30 | Refreshed within the declared parent ranges, including matching native bindings/types. |
 | setup-node / npm ip-address / Undici repairs | 7.1.0 / 10.7.4 / 8.12.2 | SHA-pinned CI action; compatible build-toolchain repairs. |
 
 Verify current releases again when publishing, using the npm registry and official [Node](https://nodejs.org/en/about/previous-releases), [Alpine](https://www.alpinelinux.org/releases/) and [PostgreSQL](https://www.postgresql.org/docs/release/) release information. Pinned releases are reviewed and reproducible, not permanently up to date. Dependabot watches application/build dependencies, actions and both Dockerfiles.
 
 GitHub Dependabot vulnerability alerts and automated security-update pull requests were enabled and verified on 2026-10-16. These are separate from the weekly version-update schedule in dependabot.yaml. New pull requests still require review and passing checks; enabling security updates does not automatically merge or deploy them.
+
+`npm outdated --all` also lists optional packages for other platforms, different release channels and versions outside upstream libraries' declared ranges. These are not all actionable upgrades. Do not force newer incompatible majors into another package's internals or downgrade prerelease-channel packages just to clear that report. Refresh compatible lockfile ranges, update the owning package when available, and record the remaining contract (notably the required TypeScript 6 API bridge).
 
 ## TypeScript and npm Compatibility
 
@@ -37,17 +42,21 @@ TerminCount therefore also locks Undici 8.12.2 as a runtime dependency and calls
 
 ## Container Findings
 
-The following published-image findings are from the 2026-10-10 release review; they are not proof that the unreleased source or a future rebuild has the same results. Rebuild and rescan the actual images before publishing.
+### Published Alpine Database Images
 
-The 2026-10-16 local review rebuilt both app architectures (amd64/arm64), the npm build base and both PostgreSQL architectures with available APK updates. Scout found no known vulnerabilities in either app image or the build base; both database images retained the same 11 unfixed libxml2 findings described below. These are local review builds, not new DockerHub tags or evidence of a production update.
+The published 1.5.1 database image uses Alpine 3.24 and libxml2 2.13.9-r2. Rebuilding that image on 2026-10-16 retained 11 findings: one high, five medium and five low. Neither another PostgreSQL 18.6 tag nor Debian stable repairs those library findings; the engine is already current. PostgreSQL 19 RC1 is not an appropriate production security fix for an operating-system library. No findings were suppressed.
 
-Docker Scout's all-severity review found no known CVEs in the app image or repaired base build stage. npm audit also reports no known vulnerabilities in application dependencies and the locked npm repair manifest. These results describe the scanned builds, not every version of the upstream base tags.
+### Unreleased Wolfi Database Migration
 
-The official PostgreSQL 18.6 Alpine image had 73 findings on the reviewed ARM64 image, including an old Go standard library in gosu and outdated APK packages. The separate TerminCount PostgreSQL image refreshes those packages and replaces the startup helper with [su-exec 0.3, documented by gosu's maintainer](https://github.com/tianon/gosu/blob/master/README.md#su-exec). Its final stage copies the refreshed filesystem, so the removed executable is not distributed in inherited layers. The upstream engine, user IDs, entrypoint, locale, PGDATA, volume and shutdown signal are preserved.
+The database source now uses the [Chainguard PostgreSQL image](https://images.chainguard.dev/directory/image/postgres/overview), pinned by its multiarch digest, with the same PostgreSQL 18.6 engine and libxml2 2.15.4-r1. It preserves UID 70, native Docker Secrets, the PostgreSQL entrypoint and the deployment's data path. Unlike a library copied over an incompatible ABI, this PostgreSQL package is built against the newer XML library. The source archive of gosu 1.19 is checksum verified and rebuilt with the latest Go 1.27.2 and locked user/x/sys dependencies; this removes the remaining vulnerable Go dependency in that base. The full refreshed filesystem is copied into a scratch final stage, so an older helper binary is not retained in distributed layers.
 
-**11 findings remain in libxml2 2.13.9-r2: one high, five medium and five low.** The current Alpine 3.24 package repository has no corrected version for these findings. They are not suppressed or claimed non-affected. Do not expose PostgreSQL publicly; limit database/secret access and do not accept arbitrary SQL/XML. The application does not expose an XML-processing endpoint, but containment is not a fix for the library. Rebuild/rescan after an upstream repair. Switching to Debian simply to change scanner results would also require reviewing locale/collation behavior and is not automatically safer.
+Local final-image scans on 2026-10-16 found zero vulnerabilities in both amd64 and arm64 Wolfi builds. Syft regenerates the helper's SPDX inventory from the rebuilt executable rather than keeping the base's obsolete x/sys 0.1.0 inventory. No advisory is ignored or suppressed. The published 1.5.1 image and the running server are not changed by these local results.
 
-The database image retains upstream root startup to initialize/chown a fresh bind-mounted directory, then runs PostgreSQL as UID 70. Compose grants only the required ownership/user-switch capabilities, uses no-new-privileges and a read-only root filesystem with writable data/tmpfs mounts. A scanner requiring a non-root image USER may still flag this database initialization contract; that policy result must not be mislabeled compliant.
+This changes musl to glibc and therefore requires a verified logical dump/restore into a fresh data directory, not an in-place image swap. The startup guard refuses unmarked legacy clusters without changing their contents. A new cluster creates a per-cluster `wolfi-glibc-v1` marker beside PGDATA; retain this marker in physical backups. It is migration metadata, not a backup. Never manufacture the marker on an old cluster to bypass the check. See [Operations](OPERATIONS.md#unreleased-wolfi-database-migration).
+
+CI tests Secret-file initialization, rejection of a legacy cluster, unchanged legacy data, full dump/restore, UTF-8 values, owner-like hashes, JSON vote data, expiry timestamps, identity sequences, XML queries, restart persistence and all browser/API tests against the restored database. Production migration and image publication remain separate gates. Rebuild and scan both final architectures before publishing; a new base is not a permanent vulnerability-free guarantee.
+
+The database retains root startup for directory initialization, then runs PostgreSQL as UID 70 with the existing reduced capabilities/read-only Compose contract. A policy requiring a non-root image USER may still flag initialization; do not mislabel that result compliant. App image and npm build-base scans are separate, and their zero results do not invalidate the embedded Node advisories discussed above.
 
 ## Source Review and Verification
 

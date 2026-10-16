@@ -26,3 +26,7 @@ updates:
     directory: /deploy/postgres
     schedule:
       interval: weekly
+  - package-ecosystem: gomod
+    directory: /tools/gosu-repair
+    schedule:
+      interval: weekly
