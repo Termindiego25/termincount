@@ -75,13 +75,13 @@ COPY --from=runtime-base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-ce
 COPY --from=production-dependencies /app/node_modules ./node_modules
 COPY --from=build /app/build ./build
 COPY package.json ./
-COPY tools/server.mjs ./tools/server.mjs
+COPY tools/server.mjs tools/fetch-runtime.mjs ./tools/
 COPY src/lib/server/public-origin.ts ./src/lib/server/public-origin.ts
 
 EXPOSE 3000
 
 USER 10001:10001
 
-HEALTHCHECK --interval=30s --timeout=8s --start-period=20s --retries=3 CMD ["/usr/local/bin/node", "-e", "fetch(`http://127.0.0.1:${process.env.PORT || 3000}/healthz`, { signal: AbortSignal.timeout(7000) }).then((r)=>process.exit(r.status===204?0:1)).catch(()=>process.exit(1))"]
+HEALTHCHECK --interval=30s --timeout=8s --start-period=20s --retries=3 CMD ["/usr/local/bin/node", "--import", "./tools/fetch-runtime.mjs", "-e", "fetch(`http://127.0.0.1:${process.env.PORT || 3000}/healthz`, { signal: AbortSignal.timeout(7000) }).then((r)=>process.exit(r.status===204?0:1)).catch(()=>process.exit(1))"]
 
 CMD ["/usr/local/bin/node", "tools/server.mjs"]

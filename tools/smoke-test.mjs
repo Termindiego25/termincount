@@ -50,6 +50,7 @@ check(Boolean(packageJson.devDependencies?.['@playwright/test']), 'Playwright sh
 check(Boolean(packageJson.dependencies?.bootstrap), 'Bootstrap CSS should be a managed dependency.');
 check(Boolean(packageJson.dependencies?.pg), 'PostgreSQL client should be installed.');
 check(Boolean(packageJson.dependencies?.qrcode), 'QR code generation should be installed.');
+check(Boolean(packageJson.dependencies?.undici), 'Patched HTTP web APIs should be a managed runtime dependency.');
 check(Boolean(packageJson.author), 'package.json should include author metadata.');
 check(packageJson.license === 'GPL-3.0', 'package.json should include GPL-3.0 license metadata.');
 check(dockerfile.includes(`ARG NPM_VERSION=${packageJson.packageManager.replace('npm@', '')}`), 'Docker and package npm versions should match.');
@@ -97,6 +98,8 @@ check(/PORT=3000/.test(dockerfile), 'Dockerfile should use a non-privileged runt
 check(/EXPOSE 3000/.test(dockerfile), 'Dockerfile should expose the non-privileged runtime port.');
 check(/USER 10001:10001/.test(dockerfile), 'Dockerfile should run the runtime image as a non-root user.');
 check(/CMD \["\/usr\/local\/bin\/node", "tools\/server.mjs"\]/.test(dockerfile), 'Dockerfile should use the runtime-origin server entrypoint.');
+check((await readFile(fromRoot('tools', 'server.mjs'), 'utf8')).includes("import './fetch-runtime.mjs'"), 'The production server should install patched web APIs before loading the adapter.');
+check(dockerfile.includes('"--import", "./tools/fetch-runtime.mjs"'), 'The container health check should also use patched web APIs.');
 check(/org\.opencontainers\.image\.version="\$\{VERSION\}"/.test(dockerfile), 'Dockerfile should expose OCI version metadata.');
 check(/org\.opencontainers\.image\.authors=/.test(dockerfile), 'Dockerfile should expose OCI author metadata.');
 check(compose.includes(`termindiego25/termincount:postgres-18.6-${packageJson.version}`), 'Docker Compose should use the reviewed PostgreSQL image.');

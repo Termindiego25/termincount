@@ -1,3 +1,4 @@
+import './fetch-runtime.mjs';
 import { getPublicOrigin } from '../src/lib/server/public-origin.ts';
 
 let configuredOrigin;

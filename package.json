@@ -22,18 +22,19 @@
     "#lib/*": "./src/lib/*"
   },
   "scripts": {
-    "dev": "vite dev --host 127.0.0.1",
-    "build": "vite build",
+    "dev": "node --import ./tools/fetch-runtime.mjs node_modules/vite/bin/vite.js dev --host 127.0.0.1",
+    "build": "node --import ./tools/fetch-runtime.mjs node_modules/vite/bin/vite.js build",
     "preview": "node tools/server.mjs",
     "check": "svelte-kit sync && node tools/reset-check-cache.mjs && svelte-check --tsgo --fail-on-warnings --tsconfig ./tsconfig.json",
-    "test": "npm run check && node tools/smoke-test.mjs",
+    "test": "npm run check && node tools/smoke-test.mjs && node --test tools/fetch-runtime.test.mjs",
     "test:e2e": "playwright test",
     "release": "node tools/release.mjs"
   },
   "dependencies": {
     "bootstrap": "5.3.8",
     "pg": "8.23.1",
-    "qrcode": "1.5.4"
+    "qrcode": "1.5.4",
+    "undici": "8.12.2"
   },
   "devDependencies": {
     "@typescript/native": "npm:typescript@7.0.2",
