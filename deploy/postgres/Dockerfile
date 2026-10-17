@@ -33,7 +33,7 @@ STOPSIGNAL SIGINT
 ENTRYPOINT ["/usr/local/bin/termincount-postgres-entrypoint"]
 CMD ["postgres"]
 
-ARG VERSION=1.5.1
+ARG VERSION=1.6.0
 ARG VCS_REF=unknown
 ARG BUILD_DATE=unknown
 LABEL org.opencontainers.image.title="TerminCount PostgreSQL" \

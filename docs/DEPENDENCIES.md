@@ -1,6 +1,6 @@
 # Dependency and Service Review
 
-Dependency versions rechecked on 2026-10-16. This covers TerminCount's source, build tools, app image and PostgreSQL service, not the host OS or Docker installation. Version freshness and known vulnerabilities are separate checks; no scan proves absence of unknown vulnerabilities. See the Unreleased changelog for source changes that are not yet in a published image.
+Dependency review for 1.6.0, with engine versions rechecked on 2026-10-17. This covers TerminCount's source, build tools, app image and PostgreSQL service, not the host OS or Docker installation. Version freshness and known vulnerabilities are separate checks; no scan proves absence of unknown vulnerabilities. See the changelog for release changes; publication does not migrate existing installations automatically.
 
 ## Versions
 
@@ -16,7 +16,7 @@ Dependency versions rechecked on 2026-10-16. This covers TerminCount's source, b
 | Node types / Playwright | 26.6.5 / 1.64.1 | Latest releases. |
 | pg / Bootstrap CSS / qrcode | 8.23.1 / 5.3.8 / 1.5.4 | Latest releases; no Bootstrap JavaScript or jQuery. |
 | PostgreSQL | 18.6 | Latest stable engine; PostgreSQL 19 is RC1, not a production stable release. |
-| PostgreSQL base / libxml2 | Wolfi / 2.15.4-r1 | Unreleased migration from the Alpine database image; base pinned by digest. |
+| PostgreSQL base / libxml2 | Wolfi / 2.15.4-r1 | 1.6.0 migration from the Alpine database image; base pinned by digest. |
 | PostgreSQL startup helper | gosu 1.19 / Go 1.27.2 | Verified upstream source with locked user 0.4.1 / x/sys 0.49.0 repairs. |
 | Helper SBOM generator | Syft 1.54.1 | Build-only; regenerates the inventory from the rebuilt executable. |
 | Transitive build tools | Rolldown 1.2.14 / PostCSS 8.5.30 | Refreshed within the declared parent ranges, including matching native bindings/types. |
@@ -46,13 +46,13 @@ TerminCount therefore also locks Undici 8.12.2 as a runtime dependency and calls
 
 The published 1.5.1 database image uses Alpine 3.24 and libxml2 2.13.9-r2. Rebuilding that image on 2026-10-16 retained 11 findings: one high, five medium and five low. Neither another PostgreSQL 18.6 tag nor Debian stable repairs those library findings; the engine is already current. PostgreSQL 19 RC1 is not an appropriate production security fix for an operating-system library. No findings were suppressed.
 
-### Unreleased Wolfi Database Migration
+### Wolfi Database Migration in 1.6.0
 
 The database source now uses the [Chainguard PostgreSQL image](https://images.chainguard.dev/directory/image/postgres/overview), pinned by its multiarch digest, with the same PostgreSQL 18.6 engine and libxml2 2.15.4-r1. It preserves UID 70, native Docker Secrets, the PostgreSQL entrypoint and the deployment's data path. Unlike a library copied over an incompatible ABI, this PostgreSQL package is built against the newer XML library. The source archive of gosu 1.19 is checksum verified and rebuilt with the latest Go 1.27.2 and locked user/x/sys dependencies; this removes the remaining vulnerable Go dependency in that base. The full refreshed filesystem is copied into a scratch final stage, so an older helper binary is not retained in distributed layers.
 
-Local final-image scans on 2026-10-16 found zero vulnerabilities in both amd64 and arm64 Wolfi builds. Syft regenerates the helper's SPDX inventory from the rebuilt executable rather than keeping the base's obsolete x/sys 0.1.0 inventory. No advisory is ignored or suppressed. The published 1.5.1 image and the running server are not changed by these local results.
+Local final-image scans on 2026-10-16 found zero vulnerabilities in both amd64 and arm64 Wolfi builds. Syft regenerates the helper's SPDX inventory from the rebuilt executable rather than keeping the base's obsolete x/sys 0.1.0 inventory. No advisory is ignored or suppressed. The older 1.5.1 images remain unchanged; these scan results do not establish that a running server has been migrated.
 
-This changes musl to glibc and therefore requires a verified logical dump/restore into a fresh data directory, not an in-place image swap. The startup guard refuses unmarked legacy clusters without changing their contents. A new cluster creates a per-cluster `wolfi-glibc-v1` marker beside PGDATA; retain this marker in physical backups. It is migration metadata, not a backup. Never manufacture the marker on an old cluster to bypass the check. See [Operations](OPERATIONS.md#unreleased-wolfi-database-migration).
+This changes musl to glibc and therefore requires a verified logical dump/restore into a fresh data directory, not an in-place image swap. The startup guard refuses unmarked legacy clusters without changing their contents. A new cluster creates a per-cluster `wolfi-glibc-v1` marker beside PGDATA; retain this marker in physical backups. It is migration metadata, not a backup. Never manufacture the marker on an old cluster to bypass the check. See [Operations](OPERATIONS.md#wolfi-database-migration).
 
 CI tests Secret-file initialization, rejection of a legacy cluster, unchanged legacy data, full dump/restore, UTF-8 values, owner-like hashes, JSON vote data, expiry timestamps, identity sequences, XML queries, restart persistence and all browser/API tests against the restored database. Production migration and image publication remain separate gates. Rebuild and scan both final architectures before publishing; a new base is not a permanent vulnerability-free guarantee.
 

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.6.0 - 2026-10-17
 
 - Migrate the database image to digest-pinned Wolfi PostgreSQL 18.6 with libxml2 2.15.4, rebuilding gosu 1.19 with Go 1.27.2 and locked current dependencies instead of retaining the vulnerable helper.
 - Require a verified logical database migration for the libc change; reject legacy clusters without modifying them and test dump/restore, Secret initialization, XML, persistence and the complete browser/API suite.
@@ -11,7 +11,7 @@
 - Update the compatible npm Undici repair to 8.12.2 and recheck native addon compilation.
 - Install Undici 8.12.2's matching web APIs before development, build and production startup, including container health checks. Node 26.12.0 still embeds the older 8.11.2; the application no longer relies on those globals. Add an uppercase-integrity regression test for the new security fixes.
 
-These source/build updates are not part of the published 1.5.1 images. They do not change the database schema, credentials, poll URLs or production Compose. The new database base does require the separately documented logical migration before deployment; an app-only recreate is not sufficient.
+This release preserves the application schema, credentials, poll URLs, env files and Secret paths. Both Compose examples select the new images. **Existing Alpine database installations must complete the [logical migration](docs/OPERATIONS.md#wolfi-database-migration) before starting the new database image.** An image swap or app-only recreate is not sufficient. Keep the old images, data directory and verified backup for rollback; never overwrite the 1.5.1 tags.
 
 ## 1.5.1 - 2026-10-10
 
