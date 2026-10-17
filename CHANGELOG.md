@@ -3,6 +3,7 @@
 ## 1.6.0 - 2026-10-17
 
 - Migrate the database image to digest-pinned Wolfi PostgreSQL 18.6 with libxml2 2.15.4, rebuilding gosu 1.19 with Go 1.27.2 and locked current dependencies instead of retaining the vulnerable helper.
+- Refresh the Wolfi snapshot on release day, including OpenSSL 4.0.3-r7, SQLite 3.54.1-r0 and Heimdal 7.8.0-r54.
 - Require a verified logical database migration for the libc change; reject legacy clusters without modifying them and test dump/restore, Secret initialization, XML, persistence and the complete browser/API suite.
 - Refresh compatible transitive Rolldown 1.2.14/native bindings/types and PostCSS 8.5.30.
 - Update the Node build/runtime images to 26.12.0 and align the minimum engine and smoke checks.

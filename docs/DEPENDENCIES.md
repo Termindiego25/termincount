@@ -17,6 +17,7 @@ Dependency review for 1.6.0, with engine versions rechecked on 2026-10-17. This 
 | pg / Bootstrap CSS / qrcode | 8.23.1 / 5.3.8 / 1.5.4 | Latest releases; no Bootstrap JavaScript or jQuery. |
 | PostgreSQL | 18.6 | Latest stable engine; PostgreSQL 19 is RC1, not a production stable release. |
 | PostgreSQL base / libxml2 | Wolfi / 2.15.4-r1 | 1.6.0 migration from the Alpine database image; base pinned by digest. |
+| PostgreSQL supporting libraries | OpenSSL 4.0.3-r7 / SQLite 3.54.1-r0 / Heimdal 7.8.0-r54 | Wolfi snapshot refreshed on 2026-10-17 before publication. |
 | PostgreSQL startup helper | gosu 1.19 / Go 1.27.2 | Verified upstream source with locked user 0.4.1 / x/sys 0.49.0 repairs. |
 | Helper SBOM generator | Syft 1.54.1 | Build-only; regenerates the inventory from the rebuilt executable. |
 | Transitive build tools | Rolldown 1.2.14 / PostCSS 8.5.30 | Refreshed within the declared parent ranges, including matching native bindings/types. |
