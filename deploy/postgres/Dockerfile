@@ -13,7 +13,7 @@ RUN go mod download all \
 COPY --from=sbom-tool /syft /usr/local/bin/syft
 RUN syft scan file:/out/gosu -o spdx-json=/out/gosu.spdx.json
 
-FROM cgr.dev/chainguard/postgres:latest@sha256:4c8ef6bcf82ab05f4cca769d44847809fc069b5113893f3dc68b95983189a874 AS refreshed
+FROM cgr.dev/chainguard/postgres:latest@sha256:96e59e1ce135958248c762d9e50b2786fd4f6e18910becbab25a247ddfdbeb13 AS refreshed
 COPY --from=startup-helper /out/gosu /usr/bin/gosu
 COPY --from=startup-helper /out/gosu.spdx.json /var/lib/db/sbom/gosu-1.19-r19.spdx.json
 RUN test "$(postgres --version)" = 'postgres (PostgreSQL) 18.6' \
@@ -33,7 +33,7 @@ STOPSIGNAL SIGINT
 ENTRYPOINT ["/usr/local/bin/termincount-postgres-entrypoint"]
 CMD ["postgres"]
 
-ARG VERSION=1.5.1
+ARG VERSION=1.6.0
 ARG VCS_REF=unknown
 ARG BUILD_DATE=unknown
 LABEL org.opencontainers.image.title="TerminCount PostgreSQL" \

@@ -1,6 +1,6 @@
 # Security Policy
 
-Security fixes are provided for the current 1.5 release series. Install the latest patch release and rebuild/pull images regularly to receive runtime updates. This series uses Node 26 Current rather than LTS; keep track of its shorter support cycle and subsequent Node releases.
+Security fixes are provided for the current 1.6 release series. Install the latest patch release and rebuild/pull images regularly to receive runtime updates. This series uses Node 26 Current rather than LTS; keep track of its shorter support cycle and subsequent Node releases. Existing 1.5 installations require the documented database migration when adopting 1.6.
 
 Report vulnerabilities through the repository's private GitHub vulnerability reporting facility when enabled, or email diego@diegosr.es. Do not include credentials, owner cookies, database dumps, or private poll links in public issues.
 
@@ -12,4 +12,4 @@ Dependency audits and container scans report known issues at the time of scannin
 
 Scan the PostgreSQL image separately from the TerminCount image. Official database images can include flagged operating-system libraries and startup helpers even when PostgreSQL itself is current. Review the affected component and reachable code paths, apply upstream updates when available, and retain network isolation. A clean application-image scan does not establish a clean deployment; do not suppress findings merely to obtain a passing badge.
 
-The published 1.5.1 database image still has unresolved libxml2 findings in Alpine 3.24. The unpublished Wolfi database migration uses the repaired XML library and requires logical dump/restore; do not replace the old database image against existing files. See [Dependency review](docs/DEPENDENCIES.md) and [Operations](docs/OPERATIONS.md). Do not expose the database port publicly or use it as an untrusted SQL/XML processing service. Network isolation reduces exposure; it does not remove a vulnerability.
+The older 1.5.1 database image has unresolved libxml2 findings in Alpine 3.24. Version 1.6.0 uses the repaired XML library on Wolfi and requires logical dump/restore; do not replace the old database image against existing files. See [Dependency review](docs/DEPENDENCIES.md) and [Operations](docs/OPERATIONS.md#wolfi-database-migration). Do not expose the database port publicly or use it as an untrusted SQL/XML processing service. Network isolation reduces exposure; it does not remove a vulnerability.

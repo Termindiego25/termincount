@@ -75,13 +75,13 @@ Poll expiry uses the database wall clock after row locks are acquired. Cleanup r
 
 An exit code 126 with `exec: "/sbin/docker-init": permission denied` occurs before Node starts. This is not an application exception or database error. TerminCount does not spawn child processes and does not need an external init/reaper: from 1.5.1 its Compose and direct-run examples omit `init: true` / `--init`. Node handles SIGTERM/SIGINT through the adapter, immediately drains live streams, waits for ordinary requests/database work and exits directly. CI verifies a clean SSE end and exit code zero in less than ten seconds, without an external init. Keep the Compose stop grace period longer than the adapter's shutdown timeout. Do not make Docker's files world-writable to work around this failure.
 
-## Unreleased Wolfi Database Migration
+## Wolfi Database Migration
 
-The unpublished database Dockerfile now uses PostgreSQL 18.6 on Wolfi/glibc with libxml2 2.15.4. This replaces the older Alpine/musl database base, not the database engine or application schema. Published `postgres-18.6-1.5.1` remains the old image; no existing tag is overwritten. Do not deploy an unpublished build by treating it as a routine app-only update.
+Version 1.6.0 uses PostgreSQL 18.6 on Wolfi/glibc with libxml2 2.15.4. This replaces the older Alpine/musl database base, not the database engine or application schema. The `postgres-18.6-1.5.1` tag remains the old image; no existing version tag is overwritten. Do not deploy 1.6.0 by treating it as a routine app-only update. These instructions also apply to any custom Alpine-to-Wolfi database adoption.
 
 Changing libc can change collation order and invalidate existing indexes even at the same PostgreSQL version. Use a logical dump/restore so indexes are rebuilt by the target library. This migration preserves records, IDs, owner-session hashes and existing expiry timestamps; it does not restore a missing browser cookie or extend retention.
 
-For the eventual release, use this controlled sequence:
+For upgrades from 1.5.1 or another Alpine database image, use this controlled sequence:
 
 1. Pull the separately versioned app/database images and record both old image digests and the exact Compose/env/Secret files. Keep the existing credentials unchanged.
 2. Test a fresh dump in an isolated target database before the maintenance window. The portable local/CI fixture is `node tools/check-database-migration.mjs <new-database-image>`; it uses only its own containers/volumes and synthetic data.
