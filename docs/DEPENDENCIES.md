@@ -7,7 +7,7 @@ Source dependency review on 2026-10-23, including unreleased maintenance after 1
 | Surface | Reviewed version | Notes |
 | --- | --- | --- |
 | Node | 26.12.1 Current | Latest release, including the 2026-10-21 security fixes; amd64/arm64 images. |
-| App/build Alpine | 3.24.2 / 3.24 repositories | Current stable branch; available APK updates applied during builds. |
+| App/build Alpine | 3.24.3 / 3.24 repositories | Current stable branch; verified inside the reviewed build image, with available APK updates applied. |
 | npm | 12.2.1 | Latest npm, with reviewed bundled-library repairs below. |
 | Svelte / SvelteKit | 5.57.2 / 3.1.0 | Latest releases. |
 | adapter-node / Vite plugin | 6.0.0 / 7.3.1 | Runtime ORIGIN preserved by tools/server.mjs. |
@@ -15,7 +15,7 @@ Source dependency review on 2026-10-23, including unreleased maintenance after 1
 | TypeScript | 7.0.2 compiler + 6.0.3 API bridge | Official alias pattern; no forced peer overrides. |
 | Node types / Playwright | 26.6.5 / 1.64.1 | Latest releases. |
 | pg / Bootstrap CSS / qrcode | 8.23.1 / 5.3.8 / 1.5.4 | Latest releases; no Bootstrap JavaScript or jQuery. |
-| PostgreSQL | 18.6 | Latest stable engine; PostgreSQL 19 is RC1, not a production stable release. |
+| PostgreSQL | 18.6 | Latest stable engine; PostgreSQL 19 is not a production stable release. |
 | PostgreSQL base / libxml2 | Wolfi / 2.15.4-r1 | 1.6.0 migration from the Alpine database image; base pinned by digest. |
 | PostgreSQL supporting libraries | glibc 2.44-r9 / OpenSSL 4.0.3-r8 / Brotli 1.2.1-r0 | Reviewed Wolfi digest from PR #17; PostgreSQL remains 18.6. |
 | PostgreSQL startup helper | gosu 1.19 / Go 1.27.3 | Verified upstream source with locked user 0.4.1 / x/sys 0.49.0 repairs. |
@@ -42,6 +42,10 @@ Published 1.6.0 uses Node 26.12.0 with embedded Undici 8.11.2 and application-in
 TerminCount now locks Undici 8.12.3, whose additional fixes preserve queued-request async context and replace HTTP/2 connections stalled after stream timeouts. Its [official install() API](https://github.com/nodejs/undici/tree/v8.12.3#global-installation) runs before loading the server, dev/build tools or container health check. This replaces fetch and its matching body/header, WebSocket and EventSource APIs together. Tests verify the installed identities and lowercase/uppercase integrity validation. This remains an application API installation, not an alteration of the vendor binary. Recheck embedded versions and advisories on subsequent vendor releases.
 
 ## Container Findings
+
+### Unreleased Maintenance Reviewed on 2026-10-23
+
+The combined review covers Dependabot #17-20 plus Node 26.12.1, npm 12.2.1, Go 1.27.3 and Vite 8.3.5. Fresh app and database builds with SBOM/provenance reported zero Scout findings on both amd64 and arm64. The helper inventory describes the rebuilt binary, not the vendor's older x/sys dependency; no advisories were suppressed. The full browser/API fixture passed after replacing a published 1.6.0 Wolfi cluster with unchanged data and database/actual collation versions. These are local source-build results, not evidence of a new image publication or production deployment.
 
 ### Published Alpine Database Images
 

@@ -4,6 +4,7 @@
 
 - Review and integrate Dependabot updates #17-20: the pinned Wolfi database snapshot, Syft 1.55.0 and Undici 8.12.3 for both application APIs and npm's build-tool repairs.
 - Update Node to the 26.12.1 security release, npm to 12.2.1, Vite to 8.3.5 and the gosu build compiler to Go 1.27.3.
+- Refresh the application/build Alpine 3.24 base to the available 3.24.3 image and APK updates.
 - Replace the helper's actual vendor inventory dynamically instead of assuming the old gosu package revision. Test that exactly one inventory remains and matches the locked x/sys version.
 - Exercise replacement of a published 1.6.0 Wolfi database container with the reviewed image, retaining data and collation versions, before the full browser/API tests.
 
