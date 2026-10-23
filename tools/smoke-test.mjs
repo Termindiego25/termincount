@@ -89,6 +89,7 @@ for (const icon of manifest.icons || []) {
 check(Boolean(nodeVersion), 'The Node engine should specify the reviewed minimum release.');
 check(dockerfile.includes(`FROM --platform=$BUILDPLATFORM node:${nodeVersion}-alpine3.24 AS base`), 'The multi-arch build base should match the reviewed Node engine.');
 check(dockerfile.includes(`FROM node:${nodeVersion}-alpine3.24 AS runtime-base`), 'The target-platform runtime base should match the reviewed Node engine.');
+check((dockerfile.match(/apk add --no-cache 'musl>=1\.2\.6-r3'/g) || []).length === 2, 'Both app stages must enforce Alpine 3.24\'s vendor-patched musl floor.');
 check(dockerfile.includes('/usr/lib/libatomic.so.1*'), 'Node 26 runtime should include libatomic.');
 check(!(await exists(fromRoot('svelte.config.js'))), 'Kit 3 should keep configuration in the Vite plugin.');
 check(/FROM scratch AS runtime/.test(dockerfile), 'Dockerfile should use a minimal scratch runtime image.');
