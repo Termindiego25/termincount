@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Review and integrate Dependabot updates #17-20: the pinned Wolfi database snapshot, Syft 1.55.0 and Undici 8.12.3 for both application APIs and npm's build-tool repairs.
+- Update Node to the 26.12.1 security release, npm to 12.2.1, Vite to 8.3.5 and the gosu build compiler to Go 1.27.3.
+- Replace the helper's actual vendor inventory dynamically instead of assuming the old gosu package revision. Test that exactly one inventory remains and matches the locked x/sys version.
+- Exercise replacement of a published 1.6.0 Wolfi database container with the reviewed image, retaining data and collation versions, before the full browser/API tests.
+
+These source changes do not update the published 1.6.0 images or any running installation. Rebuild, scan and publish a new patch release before deployment. Existing 1.6.0 Wolfi clusters use the same engine/data contract; do not repeat the Alpine-to-Wolfi cutover or remove its rollback checkpoint.
+
 ## 1.6.0 - 2026-10-17
 
 - Migrate the database image to digest-pinned Wolfi PostgreSQL 18.6 with libxml2 2.15.4, rebuilding gosu 1.19 with Go 1.27.2 and locked current dependencies instead of retaining the vulnerable helper.

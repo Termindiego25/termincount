@@ -50,6 +50,8 @@ On PowerShell, the same `cp` commands are available as aliases for `Copy-Item`. 
 
 **Upgrading an existing installation:** version 1.6.0 changes the database image from Alpine/musl to Wolfi/glibc. Follow the [logical migration procedure](docs/OPERATIONS.md#wolfi-database-migration) before adopting it; do not simply pull/recreate the database against the old data directory. New installations with an empty data directory can use the quick start above.
 
+The source includes an unreleased Node 26.12.1 security update and additional dependency/image repairs reviewed on 2026-10-23. Published 1.6.0 images remain unchanged until a new release is built and published. See the [changelog](CHANGELOG.md) and [dependency review](docs/DEPENDENCIES.md); pulling an unchanged 1.6.0 tag does not apply source updates.
+
 ## Production behind Traefik
 
 Use [deploy/compose.traefik.yaml](deploy/compose.traefik.yaml) as your deployment's docker-compose.yaml. Initialize the environment/secrets as above and create the shared proxy network if it does not exist:
@@ -129,7 +131,7 @@ For a proxy 404, check router loading/hostname rules. For a 502, check the share
 
 ## Development and checks
 
-Use Node 26.12.0+ and npm 12.2.0. For a local database and dev server:
+Use Node 26.12.1+ and npm 12.2.1. For a local database and dev server:
 
 ```bash
 npm ci

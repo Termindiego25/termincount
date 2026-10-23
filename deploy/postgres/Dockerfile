@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 FROM --platform=$BUILDPLATFORM anchore/syft:v1.55.0 AS sbom-tool
-FROM --platform=$BUILDPLATFORM golang:1.27.2-alpine3.24 AS startup-helper
+FROM --platform=$BUILDPLATFORM golang:1.27.3-alpine3.24 AS startup-helper
 
 ARG TARGETARCH
 WORKDIR /src
@@ -15,8 +15,12 @@ RUN syft scan file:/out/gosu -o spdx-json=/out/gosu.spdx.json
 
 FROM cgr.dev/chainguard/postgres:latest@sha256:28139a54d1d46adb01fb11abe9d749c7634fce340833862d5922e9c0b65bc5ce AS refreshed
 COPY --from=startup-helper /out/gosu /usr/bin/gosu
-COPY --from=startup-helper /out/gosu.spdx.json /var/lib/db/sbom/gosu-1.19-r19.spdx.json
-RUN test "$(postgres --version)" = 'postgres (PostgreSQL) 18.6' \
+COPY --from=startup-helper /out/gosu.spdx.json /tmp/termincount-gosu.spdx.json
+RUN set -eu; set -- /var/lib/db/sbom/gosu-*.spdx.json; \
+    test "$#" -eq 1 && test -f "$1" \
+    && cp /tmp/termincount-gosu.spdx.json "$1" \
+    && rm /tmp/termincount-gosu.spdx.json \
+    && test "$(postgres --version)" = 'postgres (PostgreSQL) 18.6' \
     && gosu postgres sh -c 'test "$(id -u)" = 70'
 COPY --chmod=755 deploy/postgres/entrypoint.sh /usr/local/bin/termincount-postgres-entrypoint
 

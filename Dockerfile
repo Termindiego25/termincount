@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1
 
-FROM --platform=$BUILDPLATFORM node:26.12.0-alpine3.24 AS base
+FROM --platform=$BUILDPLATFORM node:26.12.1-alpine3.24 AS base
 
 WORKDIR /app
 
-ARG NPM_VERSION=12.2.0
+ARG NPM_VERSION=12.2.1
 COPY tools/npm-bundle /opt/termincount-npm-bundle
 RUN apk upgrade --no-cache \
     && npm install -g "npm@${NPM_VERSION}" \
@@ -35,7 +35,7 @@ ENV NODE_ENV=production
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-FROM node:26.12.0-alpine3.24 AS runtime-base
+FROM node:26.12.1-alpine3.24 AS runtime-base
 RUN apk upgrade --no-cache
 
 FROM scratch AS runtime
