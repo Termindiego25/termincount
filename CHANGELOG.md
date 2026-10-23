@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.6.1 - 2026-10-23
 
 - Review and integrate Dependabot updates #17-20: the pinned Wolfi database snapshot, Syft 1.55.0 and Undici 8.12.3 for both application APIs and npm's build-tool repairs.
 - Update Node to the 26.12.1 security release, npm to 12.2.1, Vite to 8.3.5 and the gosu build compiler to Go 1.27.3.
@@ -9,8 +9,9 @@
 - Refresh npm's compatible postcss-selector-parser repair to 7.1.7.
 - Replace the helper's actual vendor inventory dynamically instead of assuming the old gosu package revision. Test that exactly one inventory remains and matches the locked x/sys version.
 - Exercise replacement of a published 1.6.0 Wolfi database container with the reviewed image, retaining data and collation versions, before the full browser/API tests.
+- Remove the obsolete 1.5.1 image selection from the project env example and guard release-version alignment across both Compose examples and Dockerfiles.
 
-These source changes do not update the published 1.6.0 images or any running installation. Rebuild, scan and publish a new patch release before deployment. Existing 1.6.0 Wolfi clusters use the same engine/data contract; do not repeat the Alpine-to-Wolfi cutover or remove its rollback checkpoint.
+Install both 1.6.1 images to receive these fixes; the old 1.6.0 tags remain unchanged. Existing 1.6.0 Wolfi clusters use the same engine/data contract and need a verified backup and controlled container replacement, not another Alpine-to-Wolfi cutover. Preserve the original migration's rollback checkpoint. There are no schema, cookie, poll URL, credential or env-file changes.
 
 ## 1.6.0 - 2026-10-17
 

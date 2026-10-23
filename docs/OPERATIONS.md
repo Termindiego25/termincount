@@ -95,7 +95,7 @@ The target refuses an existing cluster unless a `wolfi-glibc-v1` marker exists a
 
 ### Maintenance after 1.6.0
 
-The unreleased 2026-10-23 update remains PostgreSQL 18.6 on Wolfi/glibc. Its fixture additionally opens a disposable cluster initialized with the published 1.6.0 image and checks unchanged data and database/actual collation versions. This is distinct from the Alpine migration above: do not move the data directory again or reuse/remove `backups/migration-1.6.0` when preparing this patch.
+Version 1.6.1 remains PostgreSQL 18.6 on Wolfi/glibc. Its fixture additionally opens a disposable cluster initialized with the published 1.6.0 image and checks unchanged data and database/actual collation versions. This is distinct from the Alpine migration above: do not move the data directory again or reuse/remove `backups/migration-1.6.0` when preparing this patch.
 
 Before adopting any newly published maintenance images, take a verified fresh dump, record the currently running image digests/configuration, and validate the update on an isolated copy. Stop app writers and PostgreSQL cleanly before replacing the database container. The marker only identifies the runtime family; it is not proof that every future libc/image update is compatible. A changed collation version requires its own reviewed reindex/restore plan. Source review does not itself publish or deploy the patch.
 

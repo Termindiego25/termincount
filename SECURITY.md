@@ -10,9 +10,9 @@ Run behind HTTPS, keep PostgreSQL private, protect secret files and backups, and
 
 Dependency audits and container scans report known issues at the time of scanning; they are not a guarantee that the application is free of vulnerabilities.
 
-The 2026-10-21 [Node 26.12.1 security release](https://nodejs.org/en/blog/release/v26.12.1) repairs issues affecting the Node 26.12.0 binary in published TerminCount 1.6.0. The source now selects 26.12.1, but a new app image must be published and deployed to apply it. GitHub npm alerts alone do not cover embedded runtime libraries or establish that a running container is patched.
+The 2026-10-21 [Node 26.12.1 security release](https://nodejs.org/en/blog/release/v26.12.1) repairs issues affecting the Node 26.12.0 binary in TerminCount 1.6.0. TerminCount 1.6.1 selects 26.12.1; deploy the new app image to apply it. GitHub npm alerts alone do not cover embedded runtime libraries or establish that a running container is patched.
 
-The 2026-10-23 build-base scan's musl CVE-2026-107891 finding is retained in the raw report. Alpine 3.24 records its backport as fixed in r3, while the scanner requires edge's r6; the matching vendor patch and package floor are documented in the [dependency review](docs/DEPENDENCIES.md#unreleased-maintenance-reviewed-on-2026-10-23). Do not suppress unrelated findings or infer that an empty scratch-image scan validates its source libraries.
+The 2026-10-23 build-base scan's musl CVE-2026-107891 finding is retained in the raw report. Alpine 3.24 records its backport as fixed in r3, while the scanner requires edge's r6; the matching vendor patch and package floor are documented in the [dependency review](docs/DEPENDENCIES.md#161-maintenance-reviewed-on-2026-10-23). Do not suppress unrelated findings or infer that an empty scratch-image scan validates its source libraries.
 
 Scan the PostgreSQL image separately from the TerminCount image. Official database images can include flagged operating-system libraries and startup helpers even when PostgreSQL itself is current. Review the affected component and reachable code paths, apply upstream updates when available, and retain network isolation. A clean application-image scan does not establish a clean deployment; do not suppress findings merely to obtain a passing badge.
 
