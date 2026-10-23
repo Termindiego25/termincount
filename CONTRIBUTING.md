@@ -1,6 +1,6 @@
 # Contributing
 
-Use Node.js 26.12.0 or newer and npm 12.2.0. Install with `npm ci`; keep package-lock.json in every dependency change. Type checking uses TypeScript 7 through the official @typescript/native alias and svelte-check --tsgo integration. TypeScript 6.0.3 remains only for upstream JavaScript API compatibility. Do not remove that bridge or bypass peer checks with force/legacy-peer-deps. See [Dependency review](docs/DEPENDENCIES.md).
+Use Node.js 26.12.1 or newer and npm 12.2.1. Install with `npm ci`; keep package-lock.json in every dependency change. Type checking uses TypeScript 7 through the official @typescript/native alias and svelte-check --tsgo integration. TypeScript 6.0.3 remains only for upstream JavaScript API compatibility. Do not remove that bridge or bypass peer checks with force/legacy-peer-deps. See [Dependency review](docs/DEPENDENCIES.md).
 
 Copy the environment and secret examples as described in the README. Use a dedicated development/test database, never a production database. The integration tests create polls, expire test records, and terminate TerminCount's realtime database connections to exercise recovery.
 

@@ -93,6 +93,12 @@ For upgrades from 1.5.1 or another Alpine database image, use this controlled se
 
 The target refuses an existing cluster unless a `wolfi-glibc-v1` marker exists at `${PGDATA}.termincount-runtime`. New empty clusters create this metadata beside PGDATA before initialization. Do not create/copy a marker onto legacy data to bypass the guard; it cannot repair index order. Preserve the entire `data/postgres` directory, including that marker, for cold physical backups, and pair physical restores with the same reviewed database image.
 
+### Maintenance after 1.6.0
+
+The unreleased 2026-10-23 update remains PostgreSQL 18.6 on Wolfi/glibc. Its fixture additionally opens a disposable cluster initialized with the published 1.6.0 image and checks unchanged data and database/actual collation versions. This is distinct from the Alpine migration above: do not move the data directory again or reuse/remove `backups/migration-1.6.0` when preparing this patch.
+
+Before adopting any newly published maintenance images, take a verified fresh dump, record the currently running image digests/configuration, and validate the update on an isolated copy. Stop app writers and PostgreSQL cleanly before replacing the database container. The marker only identifies the runtime family; it is not proof that every future libc/image update is compatible. A changed collation version requires its own reviewed reindex/restore plan. Source review does not itself publish or deploy the patch.
+
 ## Rotating a database password
 
 After a verified backup, stop only the app and open PostgreSQL's interactive client. Use your database service name:

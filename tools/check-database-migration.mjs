@@ -1,13 +1,17 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const image = process.argv[2] ?? 'termincount-postgres:ci';
+const previousImage = process.argv[3];
+const helperModule = await readFile(path.join(root, 'tools/gosu-repair/go.mod'), 'utf8');
+const sysVersion = helperModule.match(/^\s*golang\.org\/x\/sys\s+(\S+)\s*$/m)?.[1];
+assert.ok(sysVersion, 'The helper must lock x/sys');
 const legacy = 'postgres:18.6-alpine3.24';
 const suffix = randomUUID().slice(0, 8);
 const label = `es.diegosr.termincount.migration-test=${suffix}`;
@@ -92,11 +96,26 @@ try {
 	await ready(source);
 	assert.equal(sql(source, 'SELECT row_to_json(f)::text FROM migration_fixture f ORDER BY id'), snapshot);
 	docker(['stop', '--time', '30', source]);
-	const target = start('target', image, restoredVolume, true);
+	let target = start('target', previousImage ?? image, restoredVolume, true);
 	await ready(target);
 	docker(['exec', '-i', target, 'pg_restore', '-U', 'termincount', '-d', 'termincount',
 		'--no-owner', '--no-privileges', '--exit-on-error'], dump);
 	assert.equal(sql(target, 'SELECT row_to_json(f)::text FROM migration_fixture f ORDER BY id'), snapshot);
+	if (previousImage) {
+		const collation = "SELECT datcollversion, pg_database_collation_actual_version(oid) FROM pg_database WHERE datname = current_database()";
+		const originalCollation = sql(target, collation);
+		docker(['stop', '--time', '30', target]);
+		target = start('updated', image, restoredVolume, true);
+		await ready(target);
+		assert.equal(sql(target, collation), originalCollation, 'An existing Wolfi cluster must retain its collation contract');
+		assert.equal(sql(target, 'SELECT row_to_json(f)::text FROM migration_fixture f ORDER BY id'), snapshot);
+	}
+	const inventories = text(['exec', target, 'sh', '-c', 'printf "%s\\n" /var/lib/db/sbom/gosu-*.spdx.json']).split('\n');
+	assert.equal(inventories.length, 1, 'Exactly one helper inventory must remain after base updates');
+	const inventory = JSON.parse(text(['exec', target, 'cat', inventories[0]]));
+	const sysPackages = inventory.packages.filter((entry) => entry.name === 'golang.org/x/sys');
+	assert.equal(sysPackages.length, 1);
+	assert.equal(sysPackages[0].versionInfo, sysVersion, 'The inventory must describe the actual locked helper dependency');
 	assert.equal(sql(target, "SELECT (xpath('/fixture/text()', xml_value))[1]::text FROM migration_fixture"), 'ok');
 	assert.equal(sql(target, "INSERT INTO migration_fixture(poll_id,owner_hash,label,votes,expires_at) VALUES ('second','owner','test','[0]',now()) RETURNING id").split('\n')[0], '2');
 	assert.match(sql(target, 'SELECT version()'), /PostgreSQL 18\.6/);
@@ -111,7 +130,8 @@ try {
 			PATH: `${path.dirname(process.execPath)}${path.delimiter}${process.env.PATH ?? ''}`,
 			DATABASE_URL: `postgres://termincount:migration-fixture-only@127.0.0.1:${port}/termincount` }
 	});
-	console.log('Database image migration passed: Secrets, untouched legacy cluster, logical restore, XML, identities, restart and browser/API tests.');
+	console.log('Database image migration passed: Secrets, untouched legacy cluster, logical restore, helper inventory, XML, identities, restart and browser/API tests.');
+	if (previousImage) console.log('Existing Wolfi cluster update passed with unchanged fixture data and collation versions.');
 } finally {
 	for (const id of containers.reverse()) {
 		try { docker(['rm', '-f', id]); } catch (error) { console.error('Could not remove owned fixture', id, error.message); }

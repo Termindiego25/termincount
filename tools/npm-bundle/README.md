@@ -1,6 +1,6 @@
 # npm Bundled Dependency Fixes
 
-npm 12.2.0 ships some bundled libraries with known vulnerabilities even though it is the latest npm release. This directory locks compatible fixes independently from application dependencies. It is monitored by Dependabot and audited in CI.
+npm 12.2.1 still ships older bundled libraries independently of the application's dependencies. This directory locks reviewed, compatible repairs and updates for that build toolchain. It is monitored by Dependabot and audited in CI; neither the npm version nor application-only audit covers the whole installed build toolchain.
 
 Install with `npm ci --prefix tools/npm-bundle --install-strategy=nested --ignore-scripts`. The nested strategy preserves each replacement's dependency closure without changing unrelated npm libraries. Run apply.mjs with the absolute installed npm package directory, for example `node tools/npm-bundle/apply.mjs "$(npm root -g)/npm"` on a controlled build/CI installation.
 
