@@ -9,6 +9,7 @@
 - Refresh npm's compatible postcss-selector-parser repair to 7.1.7.
 - Replace the helper's actual vendor inventory dynamically instead of assuming the old gosu package revision. Test that exactly one inventory remains and matches the locked x/sys version.
 - Exercise replacement of a published 1.6.0 Wolfi database container with the reviewed image, retaining data and collation versions, before the full browser/API tests.
+- Remove the obsolete 1.5.1 image selection from the project env example and guard release-version alignment across both Compose examples and Dockerfiles.
 
 Install both 1.6.1 images to receive these fixes; the old 1.6.0 tags remain unchanged. Existing 1.6.0 Wolfi clusters use the same engine/data contract and need a verified backup and controlled container replacement, not another Alpine-to-Wolfi cutover. Preserve the original migration's rollback checkpoint. There are no schema, cookie, poll URL, credential or env-file changes.
 
