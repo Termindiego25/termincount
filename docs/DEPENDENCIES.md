@@ -1,6 +1,6 @@
 # Dependency and Service Review
 
-Source dependency review on 2026-10-23, including unreleased maintenance after 1.6.0. This covers TerminCount's source, build tools, app image and PostgreSQL service, not the host OS or Docker installation. Version freshness and known vulnerabilities are separate checks; no scan proves absence of unknown vulnerabilities. Published 1.6.0 images remain unchanged. See the changelog for release changes; merging source changes does not update a running installation.
+Dependency review for 1.6.1 on 2026-10-23. This covers TerminCount's source, build tools, app image and PostgreSQL service, not the host OS or Docker installation. Version freshness and known vulnerabilities are separate checks; no scan proves absence of unknown vulnerabilities. Old 1.6.0 images remain unchanged. See the changelog for release changes; publication does not update a running installation.
 
 ## Versions
 
@@ -37,13 +37,13 @@ npm 12 bundles node-gyp 13.0.0, whose Undici range is version 6. Our locked buil
 
 ### Embedded Node HTTP Library
 
-Published 1.6.0 uses Node 26.12.0 with embedded Undici 8.11.2 and application-installed Undici 8.12.2. The reviewed [Node 26.12.1 security release](https://nodejs.org/en/blog/release/v26.12.1) fixes the upstream TLS, DNS, HTTP, compression and permission issues and embeds Undici 8.12.2. This vendor update repairs the earlier embedded-Undici issues; it must still be built into a new image and deployed. GitHub npm alerts and a zero-result package scan do not substitute for the runtime vendor's advisories.
+Published 1.6.0 uses Node 26.12.0 with embedded Undici 8.11.2 and application-installed Undici 8.12.2. Version 1.6.1 uses the [Node 26.12.1 security release](https://nodejs.org/en/blog/release/v26.12.1), which fixes the upstream TLS, DNS, HTTP, compression and permission issues and embeds Undici 8.12.2. This vendor update repairs the earlier embedded-Undici issues; deploy the new image to apply it. GitHub npm alerts and a zero-result package scan do not substitute for the runtime vendor's advisories.
 
 TerminCount now locks Undici 8.12.3, whose additional fixes preserve queued-request async context and replace HTTP/2 connections stalled after stream timeouts. Its [official install() API](https://github.com/nodejs/undici/tree/v8.12.3#global-installation) runs before loading the server, dev/build tools or container health check. This replaces fetch and its matching body/header, WebSocket and EventSource APIs together. Tests verify the installed identities and lowercase/uppercase integrity validation. This remains an application API installation, not an alteration of the vendor binary. Recheck embedded versions and advisories on subsequent vendor releases.
 
 ## Container Findings
 
-### Unreleased Maintenance Reviewed on 2026-10-23
+### 1.6.1 Maintenance Reviewed on 2026-10-23
 
 The combined review covers Dependabot #17-20 plus Node 26.12.1, npm 12.2.1, Go 1.27.3 and Vite 8.3.5. Fresh app and database builds with SBOM/provenance reported zero Scout findings on both amd64 and arm64. The helper inventory describes the rebuilt binary, not the vendor's older x/sys dependency; no advisories were suppressed. The full browser/API fixture passed after replacing a published 1.6.0 Wolfi cluster with unchanged data and database/actual collation versions. These are local source-build results, not evidence of a new image publication or production deployment.
 

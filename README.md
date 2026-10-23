@@ -44,13 +44,13 @@ Edit the password secret before starting. Keep `ORIGIN=http://localhost:8080` fo
 docker compose up -d
 ```
 
-Open [http://localhost:8080](http://localhost:8080). The default Compose uses the `1.6.0` app and our PostgreSQL 18.6 image on Wolfi with repaired XML/startup-helper libraries. Service/container names are `termincount_app` and `termincount_db`; each uses its own env file. Host ports bind to loopback: other computers must use a reverse proxy or an explicitly configured host binding. Database files persist in `./data/postgres`; credentials are mounted as Docker Secrets. See the [dependency review](docs/DEPENDENCIES.md) for scan scope and the remaining upstream Node limitation.
+Open [http://localhost:8080](http://localhost:8080). The default Compose uses the `1.6.1` app and our PostgreSQL 18.6 image on Wolfi with repaired XML/startup-helper libraries. Service/container names are `termincount_app` and `termincount_db`; each uses its own env file. Host ports bind to loopback: other computers must use a reverse proxy or an explicitly configured host binding. Database files persist in `./data/postgres`; credentials are mounted as Docker Secrets. See the [dependency review](docs/DEPENDENCIES.md) for scan scope and vendor security notes.
 
 On PowerShell, the same `cp` commands are available as aliases for `Copy-Item`. Docker and Docker Compose are required; Node/npm are only needed for development or building from source.
 
 **Upgrading an existing installation:** version 1.6.0 changes the database image from Alpine/musl to Wolfi/glibc. Follow the [logical migration procedure](docs/OPERATIONS.md#wolfi-database-migration) before adopting it; do not simply pull/recreate the database against the old data directory. New installations with an empty data directory can use the quick start above.
 
-The source includes an unreleased Node 26.12.1 security update and additional dependency/image repairs reviewed on 2026-10-23. Published 1.6.0 images remain unchanged until a new release is built and published. See the [changelog](CHANGELOG.md) and [dependency review](docs/DEPENDENCIES.md); pulling an unchanged 1.6.0 tag does not apply source updates.
+Version 1.6.1 includes Node 26.12.1 security fixes and additional dependency/image repairs reviewed on 2026-10-23. Existing 1.6.0 Wolfi installations follow the [maintenance procedure](docs/OPERATIONS.md#maintenance-after-160), without another data-directory migration. Deploy both new images to apply the fixes; the old 1.6.0 tags remain unchanged. See the [changelog](CHANGELOG.md) and [dependency review](docs/DEPENDENCIES.md).
 
 ## Production behind Traefik
 
@@ -82,12 +82,12 @@ docker run -d --name termincount_app --network your-db-network \
   -p 127.0.0.1:8080:3000 \
   -e DATABASE_URL='postgres://user:password@your-db-host:5432/your-db-name' \
   -e ORIGIN='http://localhost:8080' \
-  termindiego25/termincount:1.6.0
+  termindiego25/termincount:1.6.1
 ```
 
 The connection string is an example: use your actual host/credentials, percent-encode reserved characters, and prefer `DATABASE_URL_FILE` or the individual `DB_*_FILE` variables with mounted secrets. Compose is the simpler deployment for most installations.
 
-App image tags are `1.6.0` (this release), `1.6` (the release series), and `latest`. The separate database image is `termindiego25/termincount:postgres-18.6-1.6.0`; it does not replace the app's `latest` tag. Fix an exact version or digest for controlled upgrades. Both images support linux/amd64 and linux/arm64. The app runs as UID/GID 10001 on container port 3000 and uses Node 26 Current copied into scratch; rebuilding is still necessary to receive runtime/library security updates. ARM32 users must keep the older `1.3.2` image: official Node 26 images no longer provide linux/arm/v7.
+App image tags are `1.6.1` (this release), `1.6` (the release series), and `latest`. The separate database image is `termindiego25/termincount:postgres-18.6-1.6.1`; it does not replace the app's `latest` tag. Fix an exact version or digest for controlled upgrades. Both images support linux/amd64 and linux/arm64. The app runs as UID/GID 10001 on container port 3000 and uses Node 26 Current copied into scratch; rebuilding is still necessary to receive runtime/library security updates. ARM32 users must keep the older `1.3.2` image: official Node 26 images no longer provide linux/arm/v7.
 
 ## Configuration
 
@@ -108,7 +108,7 @@ Use KEY=value in env files. `termincount.env` holds app settings and credential-
 | `HOST` / `PORT` | `0.0.0.0` / `3000` in Docker | Internal listening address/port. |
 | `BODY_SIZE_LIMIT` | `16K` in Docker | Node adapter request limit; JSON endpoints also reject oversized declared payloads. |
 | `SHUTDOWN_TIMEOUT` | `30` seconds | Node adapter grace period for connections during shutdown. |
-| `TERMINCOUNT_VERSION` | `1.6.0` in Compose | App image tag, supplied through the shell/project .env. |
+| `TERMINCOUNT_VERSION` | `1.6.1` in Compose | App image tag, supplied through the shell/project .env. |
 | `TERMINCOUNT_PORT` / `POSTGRES_PORT` | `8080` / `5432` in default Compose | Loopback host ports, supplied through the shell/project .env; absent from the Traefik Compose. |
 
 An explicit environment value wins over its `_FILE` variant. `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` (also `_FILE`) are supported as legacy database-setting aliases. PostgreSQL's own `POSTGRES_*_FILE` initialization values are set in postgresql.env.
