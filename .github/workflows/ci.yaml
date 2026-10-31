@@ -38,6 +38,7 @@ jobs:
       - run: npm run build
       - run: npx playwright install --with-deps chromium webkit
       - run: npm audit --audit-level=moderate
+      - run: npm audit --omit=dev --audit-level=low
       - run: npm audit --prefix tools/npm-bundle --audit-level=moderate
       - name: Verify the patched native build toolchain
         run: docker build --pull --target build-tool-test .
