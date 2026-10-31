@@ -11,7 +11,9 @@ const image = process.argv[2] ?? 'termincount-postgres:ci';
 const previousImage = process.argv[3];
 const helperModule = await readFile(path.join(root, 'tools/gosu-repair/go.mod'), 'utf8');
 const sysVersion = helperModule.match(/^\s*golang\.org\/x\/sys\s+(\S+)\s*$/m)?.[1];
+const userVersion = helperModule.match(/^\s*github\.com\/moby\/sys\/user\s+(\S+)\s*$/m)?.[1];
 assert.ok(sysVersion, 'The helper must lock x/sys');
+assert.ok(userVersion, 'The helper must lock moby/sys/user');
 const legacy = 'postgres:18.6-alpine3.24';
 const suffix = randomUUID().slice(0, 8);
 const label = `es.diegosr.termincount.migration-test=${suffix}`;
@@ -113,9 +115,11 @@ try {
 	const inventories = text(['exec', target, 'sh', '-c', 'printf "%s\\n" /var/lib/db/sbom/gosu-*.spdx.json']).split('\n');
 	assert.equal(inventories.length, 1, 'Exactly one helper inventory must remain after base updates');
 	const inventory = JSON.parse(text(['exec', target, 'cat', inventories[0]]));
-	const sysPackages = inventory.packages.filter((entry) => entry.name === 'golang.org/x/sys');
-	assert.equal(sysPackages.length, 1);
-	assert.equal(sysPackages[0].versionInfo, sysVersion, 'The inventory must describe the actual locked helper dependency');
+	for (const [name, version] of [['golang.org/x/sys', sysVersion], ['github.com/moby/sys/user', userVersion]]) {
+		const packages = inventory.packages.filter((entry) => entry.name === name);
+		assert.equal(packages.length, 1, `Exactly one ${name} inventory entry must remain`);
+		assert.equal(packages[0].versionInfo, version, 'The inventory must describe the actual locked helper dependency');
+	}
 	assert.equal(sql(target, "SELECT (xpath('/fixture/text()', xml_value))[1]::text FROM migration_fixture"), 'ok');
 	assert.equal(sql(target, "INSERT INTO migration_fixture(poll_id,owner_hash,label,votes,expires_at) VALUES ('second','owner','test','[0]',now()) RETURNING id").split('\n')[0], '2');
 	assert.match(sql(target, 'SELECT version()'), /PostgreSQL 18\.6/);

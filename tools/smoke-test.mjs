@@ -32,6 +32,9 @@ const voting = await readFile(fromRoot('src', 'lib', 'voting.ts'), 'utf8');
 const css = await readFile(fromRoot('src', 'app.css'), 'utf8');
 const dockerfile = await readFile(fromRoot('Dockerfile'), 'utf8');
 const databaseDockerfile = await readFile(fromRoot('deploy', 'postgres', 'Dockerfile'), 'utf8');
+const helperModule = await readFile(fromRoot('tools', 'gosu-repair', 'go.mod'), 'utf8');
+const helperSums = await readFile(fromRoot('tools', 'gosu-repair', 'go.sum'), 'utf8');
+const helperTools = await readFile(fromRoot('tools', 'gosu-repair', 'tools.go'), 'utf8');
 const projectEnv = parseEnv(await readFile(fromRoot('.env.example'), 'utf8'));
 const compose = await readFile(fromRoot('docker-compose.yaml'), 'utf8');
 const composeEnvExample = await readFile(fromRoot('termincount.env.example'), 'utf8');
@@ -46,6 +49,15 @@ check(lock.version === packageJson.version, 'Lockfile and package versions shoul
 check(dockerfile.includes(`ARG VERSION=${packageJson.version}`), 'Docker and package versions should match.');
 check(databaseDockerfile.includes(`ARG VERSION=${packageJson.version}`), 'Database Docker and package versions should match.');
 check(projectEnv.TERMINCOUNT_VERSION === packageJson.version, 'The project env example must not select an obsolete app image.');
+check(helperTools.startsWith('//go:build tools'), 'Go dependency-tool imports must stay out of the runtime source.');
+for (const name of ['github.com/moby/sys/user', 'golang.org/x/sys']) {
+	const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	const version = helperModule.match(new RegExp(`^\\s*${escaped}\\s+(v\\S+)\\s*$`, 'm'))?.[1];
+	check(Boolean(version), `The helper must retain its explicit ${name} lock.`);
+	check(Boolean(version) && helperSums.includes(`${name} ${version} h1:`) && helperSums.includes(`${name} ${version}/go.mod h1:`), `The helper must retain verified ${name} module checksums.`);
+	check(helperTools.includes(`"${name}${name === 'golang.org/x/sys' ? '/unix' : ''}"`), `Dependency tools must see the ${name} import.`);
+}
+check(databaseDockerfile.includes('go mod tidy -diff'), 'Helper dependency metadata must be verified without silently rewriting it.');
 check(Boolean(packageJson.devDependencies?.['@sveltejs/kit']), 'SvelteKit should be installed.');
 check(Boolean(packageJson.devDependencies?.['@sveltejs/adapter-node']), 'SvelteKit adapter-node should be installed.');
 check(!packageJson.devDependencies?.['@sveltejs/adapter-static'], 'SvelteKit adapter-static should not be installed.');

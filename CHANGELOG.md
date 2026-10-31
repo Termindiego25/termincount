@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- Review Dependabot #23-26: the pinned Wolfi PostgreSQL snapshot, moby/sys/user 0.5.0, npm's compatible ip-address 10.7.5 repair and Svelte 5.57.3.
+- Repair the Go updater's empty-module failure using build-tagged dependency imports, locked checksums and non-mutating tidy checks against the real upstream helper source. Verify both repaired modules in the generated helper inventory.
+- Refresh Node to 26.13.0, the stable release that starts Node 26's Lithium LTS phase; Node 27 alpha is not a production release.
+- Update compatible SvelteKit 3.1.1, adapter-node 6.0.1 and Node type 26.6.6 patches, preserving the TypeScript 6 API bridge.
+- Exercise replacement of the published 1.6.1 Wolfi database image without changing fixture data or collation versions.
+- Document the newly reviewed low-severity deepmerge build-tool advisory, its lack of an upstream patched release and its exclusion from production dependencies. Do not force obsolete framework downgrades to hide the warning.
+
+These source changes do not rebuild or overwrite the published 1.6.1 images and do not deploy an installation. Publication and controlled maintenance remain separate steps; preserve all existing database migration checkpoints.
+
 ## 1.6.1 - 2026-10-23
 
 - Review and integrate Dependabot updates #17-20: the pinned Wolfi database snapshot, Syft 1.55.0 and Undici 8.12.3 for both application APIs and npm's build-tool repairs.

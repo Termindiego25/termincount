@@ -44,7 +44,7 @@ jobs:
       - name: Verify the database image and startup contract
         run: |
           docker build --pull -f deploy/postgres/Dockerfile -t termincount-postgres:ci .
-          node tools/check-database-migration.mjs termincount-postgres:ci termindiego25/termincount@sha256:d8219ce6e06e663774f8b97f5f6e7b7662cbf8c2ab4b91b182fd7c4c1bdee400
+          node tools/check-database-migration.mjs termincount-postgres:ci termindiego25/termincount@sha256:814eace5a51f5c310ad809060b7596d24017b5b81c3f0d9429d06cd0382bd3e5
       - name: Build and check the actual container runtime
         run: |
           docker build --pull -t termincount:ci .

@@ -7,7 +7,7 @@
   "license": "GPL-3.0",
   "packageManager": "npm@12.2.1",
   "engines": {
-    "node": ">=26.12.1"
+    "node": ">=26.13.0"
   },
   "homepage": "https://termincount.diegosr.es",
   "repository": {
@@ -37,14 +37,14 @@
     "undici": "8.12.3"
   },
   "devDependencies": {
-    "@typescript/native": "npm:typescript@7.0.2",
     "@playwright/test": "1.64.1",
-    "@sveltejs/adapter-node": "6.0.0",
-    "@sveltejs/kit": "3.1.0",
+    "@sveltejs/adapter-node": "6.0.1",
+    "@sveltejs/kit": "3.1.1",
     "@sveltejs/vite-plugin-svelte": "7.3.1",
-    "@types/node": "26.6.5",
+    "@types/node": "26.6.6",
     "@types/pg": "8.23.1",
     "@types/qrcode": "1.5.6",
+    "@typescript/native": "npm:typescript@7.0.2",
     "svelte": "5.57.3",
     "svelte-check": "4.7.7",
     "typescript": "6.0.3",
