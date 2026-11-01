@@ -8,6 +8,7 @@
 - Update compatible SvelteKit 3.1.1, adapter-node 6.0.1 and Node type 26.6.6 patches, preserving the TypeScript 6 API bridge.
 - Exercise replacement of the published 1.6.1 Wolfi database image without changing fixture data or collation versions.
 - Document the newly reviewed low-severity deepmerge build-tool advisory, its lack of an upstream patched release and its exclusion from production dependencies. Do not force obsolete framework downgrades to hide the warning.
+- Record the separate glob/minimatch findings in npm's build CLI and their unsupported major-version fixes. Keep the raw findings visible pending a compatible upstream update or separately reviewed migration; final runtime scans do not cover this toolchain.
 
 These source changes do not rebuild or overwrite the published 1.6.1 images and do not deploy an installation. Publication and controlled maintenance remain separate steps; preserve all existing database migration checkpoints.
 
