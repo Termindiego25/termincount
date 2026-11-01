@@ -52,6 +52,8 @@ On PowerShell, the same `cp` commands are available as aliases for `Copy-Item`. 
 
 Version 1.6.1 includes Node 26.12.1 security fixes and additional dependency/image repairs reviewed on 2026-10-23. Existing 1.6.0 Wolfi installations follow the [maintenance procedure](docs/OPERATIONS.md#maintenance-after-160), without another data-directory migration. Deploy both new images to apply the fixes; the old 1.6.0 tags remain unchanged. See the [changelog](CHANGELOG.md) and [dependency review](docs/DEPENDENCIES.md).
 
+Source maintenance reviewed on 2026-10-31 selects Node 26.13.0 LTS and additional dependency repairs. These changes are not yet in the published 1.6.1 images. See the dependency review for the separate, unresolved low-severity build-tool advisory; source updates do not patch a running container.
+
 ## Production behind Traefik
 
 Use [deploy/compose.traefik.yaml](deploy/compose.traefik.yaml) as your deployment's docker-compose.yaml. Initialize the environment/secrets as above and create the shared proxy network if it does not exist:
@@ -131,7 +133,7 @@ For a proxy 404, check router loading/hostname rules. For a 502, check the share
 
 ## Development and checks
 
-Use Node 26.12.1+ and npm 12.2.1. For a local database and dev server:
+Use Node 26.13.0+ and npm 12.2.1. For a local database and dev server:
 
 ```bash
 npm ci
@@ -154,7 +156,7 @@ Use a dedicated test database. E2E/API tests start three app instances on 4173, 
 
 For local source images, use development tags: `docker build -t termincount:dev .` and `docker build -f deploy/postgres/Dockerfile -t termincount-postgres:dev .`. Run `node tools/check-database-migration.mjs termincount-postgres:dev` to test a disposable legacy-to-new database restore and the browser/API suite. Do not label unreleased source as an existing published release. Release/export/publishing instructions and SBOM/provenance handling are documented separately for [Maintainers](docs/MAINTAINERS.md).
 
-Type checking uses TypeScript 7 through the official svelte-check `--tsgo` integration and `@typescript/native` alias. TypeScript 6 remains only as the compatibility library required by SvelteKit/checker's existing JavaScript APIs; no peer constraints are bypassed. npm's bundled node-gyp/Undici are updated together. See [Dependency review](docs/DEPENDENCIES.md) for exact versions, scan scope and unresolved upstream findings. Node 26 is Current, not LTS, and requires following its subsequent release/support cycle.
+Type checking uses TypeScript 7 through the official svelte-check `--tsgo` integration and `@typescript/native` alias. TypeScript 6 remains only as the compatibility library required by SvelteKit/checker's existing JavaScript APIs; no peer constraints are bypassed. npm's bundled node-gyp/Undici are updated together. See [Dependency review](docs/DEPENDENCIES.md) for exact versions, scan scope and unresolved upstream findings. Node 26 entered LTS with 26.13.0; keep following security patches and the vendor support cycle.
 
 ## Project structure
 

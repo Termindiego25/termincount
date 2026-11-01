@@ -1,27 +1,27 @@
 # Dependency and Service Review
 
-Dependency review for 1.6.1 on 2026-10-23. This covers TerminCount's source, build tools, app image and PostgreSQL service, not the host OS or Docker installation. Version freshness and known vulnerabilities are separate checks; no scan proves absence of unknown vulnerabilities. Old 1.6.0 images remain unchanged. See the changelog for release changes; publication does not update a running installation.
+Source dependency review on 2026-10-31, including unreleased maintenance after 1.6.1. This covers TerminCount's source, build tools, app image and PostgreSQL service, not the host OS or Docker installation. Version freshness and known vulnerabilities are separate checks; no scan proves absence of unknown vulnerabilities. Published 1.6.1 images remain unchanged. See the changelog for release changes; source integration does not update a running installation.
 
 ## Versions
 
 | Surface | Reviewed version | Notes |
 | --- | --- | --- |
-| Node | 26.12.1 Current | Latest release, including the 2026-10-21 security fixes; amd64/arm64 images. |
+| Node | 26.13.0 Lithium LTS | Latest stable release; Node 27 is alpha. The vendor reports only LTS metadata changes from 26.12.1. |
 | App/build Alpine | 3.24.3 / 3.24 repositories | Current stable branch; verified inside the reviewed build image, with available APK updates applied. |
 | npm | 12.2.1 | Latest npm, with reviewed bundled-library repairs below. |
-| Svelte / SvelteKit | 5.57.2 / 3.1.0 | Latest releases. |
-| adapter-node / Vite plugin | 6.0.0 / 7.3.1 | Runtime ORIGIN preserved by tools/server.mjs. |
+| Svelte / SvelteKit | 5.57.3 / 3.1.1 | Latest stable patches. |
+| adapter-node / Vite plugin | 6.0.1 / 7.3.1 | Runtime ORIGIN preserved by tools/server.mjs. |
 | Vite / svelte-check | 8.3.5 / 4.7.7 | Type checking uses the native TypeScript 7 integration. |
 | TypeScript | 7.0.2 compiler + 6.0.3 API bridge | Official alias pattern; no forced peer overrides. |
-| Node types / Playwright | 26.6.5 / 1.64.1 | Latest releases. |
+| Node types / Playwright | 26.6.6 / 1.64.1 | Latest releases. |
 | pg / Bootstrap CSS / qrcode | 8.23.1 / 5.3.8 / 1.5.4 | Latest releases; no Bootstrap JavaScript or jQuery. |
 | PostgreSQL | 18.6 | Latest stable engine; PostgreSQL 19 is not a production stable release. |
 | PostgreSQL base / libxml2 | Wolfi / 2.15.4-r1 | 1.6.0 migration from the Alpine database image; base pinned by digest. |
-| PostgreSQL supporting libraries | glibc 2.44-r9 / OpenSSL 4.0.3-r8 / Brotli 1.2.1-r0 | Reviewed Wolfi digest from PR #17; PostgreSQL remains 18.6. |
-| PostgreSQL startup helper | gosu 1.19 / Go 1.27.3 | Verified upstream source with locked user 0.4.1 / x/sys 0.49.0 repairs. |
+| PostgreSQL supporting libraries | Digest-pinned Wolfi snapshot from PR #23 | Engine remains 18.6; verify actual library inventory and existing-cluster/collation behavior when rebuilding. |
+| PostgreSQL startup helper | gosu 1.19 / Go 1.27.3 | Verified upstream source with locked user 0.5.0 / x/sys 0.49.0 repairs. |
 | Helper SBOM generator | Syft 1.55.0 | Build-only; regenerates the inventory from the rebuilt executable. |
 | Transitive build tools | Rolldown 1.2.14 / PostCSS 8.5.30 | Refreshed within the declared parent ranges, including matching native bindings/types. |
-| setup-node / npm ip-address / Undici repairs | 7.1.0 / 10.7.4 / 8.12.3 | SHA-pinned CI action; compatible build-toolchain repairs. |
+| setup-node / npm ip-address / Undici repairs | 7.1.0 / 10.7.5 / 8.12.3 | SHA-pinned CI action; compatible build-toolchain repairs. |
 
 Verify current releases again when publishing, using the npm registry and official [Node](https://nodejs.org/en/about/previous-releases), [Alpine](https://www.alpinelinux.org/releases/) and [PostgreSQL](https://www.postgresql.org/docs/release/) release information. Pinned releases are reviewed and reproducible, not permanently up to date. Dependabot watches application/build dependencies, actions and both Dockerfiles.
 
@@ -34,6 +34,28 @@ GitHub Dependabot vulnerability alerts and automated security-update pull reques
 The [official svelte-check integration](https://github.com/sveltejs/language-tools/blob/master/packages/svelte-check/README.md) installs TypeScript 7 as `@typescript/native` and uses `--tsgo`. TypeScript 6 remains for upstream tools using the JavaScript compiler API that TypeScript 7 removed. It is not the active type checker. The bridge's major is excluded from automatic Dependabot upgrades until those consumers migrate; the active compiler alias remains monitored. Deleting this bridge or using force/legacy-peer-deps would break supported tooling. The checker was verified with an intentional type error, not just a passing run. Generated checker cache is reset to avoid stale virtual files after a component is deleted/renamed.
 
 npm 12 bundles node-gyp 13.0.0, whose Undici range is version 6. Our locked build repairs first update node-gyp to 13.1.0, within npm's accepted range; that parent supports Undici 8, so Undici 8.12.3 is then installed without overriding a conflicting parent requirement. A real native addon test downloads/checks Node headers, compiles and loads the addon. The other compatible bundled repairs remain locked/audited. See [npm bundle](../tools/npm-bundle/README.md).
+
+### Unpatched Build Dependency Reviewed on 2026-10-31
+
+The full npm audit reports four low-severity affected dependency nodes, all tracing to one [deepmerge advisory, GHSA-gcqx-w48m-w2h4](https://github.com/advisories/GHSA-gcqx-w48m-w2h4). The latest deepmerge 4.3.1 is affected and the advisory lists no patched release. The chain is deepmerge -> Vite's Svelte plugin -> SvelteKit/adapter-node; it is not four independent vulnerabilities. npm's proposed force fix downgrades to obsolete pre-1.0 frameworks and is not a compatible security update.
+
+Source inspection locates deepmerge in the plugin's build-configuration merge, not poll requests or vote processing. Our configuration is repository-controlled, the dev server binds loopback, and these packages are devDependencies. Production-only npm audit reports zero findings; final runtime scans and component inventory must still be verified independently. This narrows the reviewed exposure, not the upstream defect: keep the finding visible, never build untrusted code with secrets, and update the owning plugin/library once a supported fix exists. No audit suppression, forced override or obsolete downgrade is added.
+
+### Go Update Metadata
+
+PR #24's generated diff removed both module requirements and all checksums rather than upgrading user. The repair directory had no Go imports because the real source is downloaded only inside Docker; module tidy therefore treated it as empty. A tools-tagged import anchor now keeps both upstream dependencies visible to module tools without vendoring gosu or entering the compiled helper. The build verifies non-mutating tidy against the anchor and extracted, checksum-verified upstream source. Smoke checks guard required locks/checksums, and the database fixture checks both modules in the unique regenerated SPDX inventory. The user module's Go 1.24 minimum is satisfied by Go 1.27.3; release notes for unrelated modules in moby/sys do not describe the helper's actual update.
+
+The reviewed source selects [Node 26.13.0 LTS](https://nodejs.org/en/blog/release/v26.13.0). This stable metadata-only LTS transition does not change the vendor's code from 26.12.1. Node 27's alpha channel is not a stable production upgrade. These source changes require a separately published patch before any deployment.
+
+### Bundled npm Findings Reviewed on 2026-11-01
+
+The actual repaired npm 12.2.1 build image retains two newly reported findings: [glob CVE-2026-118773](https://github.com/isaacs/node-glob/security/advisories/GHSA-3g3m-2fjr-6pw4) in 13.0.6 and [minimatch CVE-2026-118764](https://github.com/advisories/GHSA-g3hv-75wg-m249) in 10.2.5. The available fixes start in glob 14.0.2 and minimatch 11.0.1; latest stable releases are 14.0.3 and 11.0.3. npm 12.2.1 still declares glob ^13.0.6 and minimatch ^10.2.5, and its current dependants also declare the older majors. No compatible official npm update/backport was available at review time. The repair helper deliberately rejects such unreviewed major replacements. A forced swap, false component version or scanner exception is not a validated fix.
+
+These findings concern filesystem-pattern work in the build/package-manager process, not the installed production application. Build untrusted contributions without credentials and with bounded job resources/timeouts. A future npm update, an independently tested compatibility adaptation or a separately reviewed package-manager migration is still needed to remove them. Keep this pending upstream work visible rather than claiming the whole toolchain is vulnerability-free.
+
+The separate build-base Scout report also retains the previously documented Alpine musl stable/edge revision mismatch. Actual-file scans of both final images on 2026-11-01 returned zero findings on amd64 and arm64. The full npm project audit retains the four low-severity dependency nodes from the single unpatched deepmerge issue above; production-only and repair-bundle audits remain clear. The private npm installation's lockfile audit describes npm's original bundled dependency graph, not the replacements copied into its filesystem; use the actual-file scan and verified installed versions for that repaired toolchain. No raw findings are suppressed or removed.
+
+Verification of the reviewed source passed type/smoke/HTTP API checks, the production build and all 29 browser/API tests after a verified database restore and replacement of the published 1.6.1 Wolfi container, with unchanged fixture data and collation versions. These are local/CI source-build results; no new images or version tags were published and no production deployment was performed in this review.
 
 ### Embedded Node HTTP Library
 

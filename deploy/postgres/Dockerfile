@@ -1,19 +1,25 @@
 # syntax=docker/dockerfile:1
 FROM --platform=$BUILDPLATFORM anchore/syft:v1.55.0 AS sbom-tool
-FROM --platform=$BUILDPLATFORM golang:1.27.3-alpine3.24 AS startup-helper
+FROM --platform=$BUILDPLATFORM golang:1.27.3-alpine3.24 AS helper-modules
+
+WORKDIR /modules
+COPY tools/gosu-repair/go.mod tools/gosu-repair/go.sum tools/gosu-repair/tools.go ./
+RUN go mod tidy -diff && go mod download all && go mod verify
+
+FROM helper-modules AS startup-helper
 
 ARG TARGETARCH
 WORKDIR /src
 ADD --checksum=sha256:cd9719b775dbfedae53923c9b0dc792b66d42c51e0b36652ed6f747fbadc0164 https://github.com/tianon/gosu/archive/refs/tags/1.19.tar.gz /tmp/gosu.tar.gz
 RUN tar -xzf /tmp/gosu.tar.gz --strip-components=1 -C /src
-COPY tools/gosu-repair/go.mod tools/gosu-repair/go.sum ./
-RUN go mod download all \
+COPY --from=helper-modules /modules/go.mod /modules/go.sum ./
+RUN go mod tidy -diff \
     && go mod verify \
     && CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH go build -trimpath -ldflags='-s -w' -o /out/gosu .
 COPY --from=sbom-tool /syft /usr/local/bin/syft
 RUN syft scan file:/out/gosu -o spdx-json=/out/gosu.spdx.json
 
-FROM cgr.dev/chainguard/postgres:latest@sha256:28139a54d1d46adb01fb11abe9d749c7634fce340833862d5922e9c0b65bc5ce AS refreshed
+FROM cgr.dev/chainguard/postgres:latest@sha256:8ec81cdb3615544e874a3ecd71a8511a215b7017e8e92ff7571bbab457b831f1 AS refreshed
 COPY --from=startup-helper /out/gosu /usr/bin/gosu
 COPY --from=startup-helper /out/gosu.spdx.json /tmp/termincount-gosu.spdx.json
 RUN set -eu; set -- /var/lib/db/sbom/gosu-*.spdx.json; \
