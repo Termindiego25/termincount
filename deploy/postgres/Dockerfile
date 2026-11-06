@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM --platform=$BUILDPLATFORM anchore/syft:v1.55.0 AS sbom-tool
+FROM --platform=$BUILDPLATFORM anchore/syft:v1.56.0 AS sbom-tool
 FROM --platform=$BUILDPLATFORM golang:1.27.3-alpine3.24 AS helper-modules
 
 WORKDIR /modules
