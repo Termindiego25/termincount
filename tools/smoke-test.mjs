@@ -32,6 +32,8 @@ const voting = await readFile(fromRoot('src', 'lib', 'voting.ts'), 'utf8');
 const css = await readFile(fromRoot('src', 'app.css'), 'utf8');
 const dockerfile = await readFile(fromRoot('Dockerfile'), 'utf8');
 const databaseDockerfile = await readFile(fromRoot('deploy', 'postgres', 'Dockerfile'), 'utf8');
+const postgresVersion = databaseDockerfile.match(/^\s+PG_VERSION=(\d+\.\d+)\s*\\?$/m)?.[1];
+check(Boolean(postgresVersion), 'The database image must declare its engine version.');
 const helperModule = await readFile(fromRoot('tools', 'gosu-repair', 'go.mod'), 'utf8');
 const helperSums = await readFile(fromRoot('tools', 'gosu-repair', 'go.sum'), 'utf8');
 const helperTools = await readFile(fromRoot('tools', 'gosu-repair', 'tools.go'), 'utf8');
@@ -123,7 +125,7 @@ check(/@typescript\/native/.test(JSON.stringify(packageJson.devDependencies)) &&
 check(databaseEnv.POSTGRES_PASSWORD_FILE === '/run/secrets/db_password', 'PostgreSQL env file should use the password secret.');
 check(appEnv.DB_PASSWORD_FILE === '/run/secrets/db_password', 'App env file should use the password secret.');
 for (const deployment of [compose, traefikCompose]) {
-	check(deployment.includes(`termindiego25/termincount:postgres-18.6-${packageJson.version}`), 'Every Compose should use the reviewed PostgreSQL image.');
+	check(deployment.includes(`termindiego25/termincount:postgres-${postgresVersion}-${packageJson.version}`), 'Every Compose should use the reviewed PostgreSQL image.');
 	check(deployment.includes('termindiego25/termincount:${TERMINCOUNT_VERSION:-' + packageJson.version + '}'), 'Every Compose should default to the current app release.');
 	check(/container_name: termincount_app/.test(deployment) && /container_name: termincount_db/.test(deployment), 'Service container names should use the termincount_ prefix.');
 	check(!/^\s+environment:/m.test(deployment), 'Runtime settings should stay in service env files.');

@@ -5,6 +5,10 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      compatible-updates:
+        patterns: ["*"]
+        update-types: [minor, patch]
     # The active compiler is @typescript/native (TypeScript 7).
     # Keep TypeScript 6's JS API bridge until Svelte's consumers migrate it.
     ignore:
@@ -18,6 +22,10 @@ updates:
     directory: /tools/npm-bundle
     schedule:
       interval: weekly
+    groups:
+      compatible-build-repairs:
+        patterns: ["*"]
+        update-types: [minor, patch]
   - package-ecosystem: docker
     directory: /
     schedule:

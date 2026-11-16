@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 FROM --platform=$BUILDPLATFORM anchore/syft:v1.57.1 AS sbom-tool
-FROM --platform=$BUILDPLATFORM golang:1.27.3-alpine3.24 AS helper-modules
+FROM --platform=$BUILDPLATFORM golang:1.27.4-alpine3.24 AS helper-modules
 
 WORKDIR /modules
 COPY tools/gosu-repair/go.mod tools/gosu-repair/go.sum tools/gosu-repair/tools.go ./
@@ -19,14 +19,14 @@ RUN go mod tidy -diff \
 COPY --from=sbom-tool /syft /usr/local/bin/syft
 RUN syft scan file:/out/gosu -o spdx-json=/out/gosu.spdx.json
 
-FROM cgr.dev/chainguard/postgres:latest@sha256:f131db66371391e404c80cef7dd40f31b1b54eb264a6cb032925d9a3859f93f4 AS refreshed
+FROM cgr.dev/chainguard/postgres:latest@sha256:de6300d86c7e5ee6c8496123b02201b136370b68a5a3b9c67af54377ed83109f AS refreshed
 COPY --from=startup-helper /out/gosu /usr/bin/gosu
 COPY --from=startup-helper /out/gosu.spdx.json /tmp/termincount-gosu.spdx.json
 RUN set -eu; set -- /var/lib/db/sbom/gosu-*.spdx.json; \
     test "$#" -eq 1 && test -f "$1" \
     && cp /tmp/termincount-gosu.spdx.json "$1" \
     && rm /tmp/termincount-gosu.spdx.json \
-    && test "$(postgres --version)" = 'postgres (PostgreSQL) 18.6' \
+    && test "$(postgres --version)" = 'postgres (PostgreSQL) 18.7' \
     && gosu postgres sh -c 'test "$(id -u)" = 70'
 COPY --chmod=755 deploy/postgres/entrypoint.sh /usr/local/bin/termincount-postgres-entrypoint
 
@@ -35,7 +35,7 @@ COPY --from=refreshed / /
 ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
     LANG=en_US.UTF-8 \
     PG_MAJOR=18 \
-    PG_VERSION=18.6 \
+    PG_VERSION=18.7 \
     PGDATA=/var/lib/postgresql/18/docker
 VOLUME /var/lib/postgresql
 EXPOSE 5432
@@ -43,7 +43,7 @@ STOPSIGNAL SIGINT
 ENTRYPOINT ["/usr/local/bin/termincount-postgres-entrypoint"]
 CMD ["postgres"]
 
-ARG VERSION=1.6.1
+ARG VERSION=1.6.2
 ARG VCS_REF=unknown
 ARG BUILD_DATE=unknown
 LABEL org.opencontainers.image.title="TerminCount PostgreSQL" \
@@ -51,7 +51,7 @@ LABEL org.opencontainers.image.title="TerminCount PostgreSQL" \
       org.opencontainers.image.authors="Termindiego25" \
       org.opencontainers.image.source="https://github.com/Termindiego25/termincount" \
       org.opencontainers.image.documentation="https://github.com/Termindiego25/termincount/blob/master/docs/OPERATIONS.md" \
-      org.opencontainers.image.version="18.6" \
+      org.opencontainers.image.version="18.7" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.licenses="PostgreSQL" \

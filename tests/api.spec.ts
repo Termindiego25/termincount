@@ -15,6 +15,18 @@ test('treats inherited object keys as unsupported languages', async ({ request }
 const db = new pg.Pool({ connectionString: process.env.DATABASE_URL ?? 'postgres://termincount:termincount@127.0.0.1:5432/termincount' });
 test.afterAll(() => db.end());
 
+test('creates all nine options in order and counts the last option', async ({ request }) => {
+	const options = Array.from({ length: 9 }, (_, index) => `Option ${index + 1}`);
+	const created = await request.post('/api/polls', { headers: { origin }, data: { options } });
+	expect(created.status()).toBe(201);
+	const { poll } = await created.json();
+	expect(poll.options.map((option: { label: string }) => option.label)).toEqual(options);
+	expect(poll.options.map((option: { position: number }) => option.position)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8]);
+	const voted = await request.post(`/api/polls/${poll.id}/vote`, { headers: { origin }, data: { index: 8 } });
+	expect(voted.status()).toBe(200);
+	expect((await voted.json()).poll.options.map((option: { votes: number }) => option.votes)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 1]);
+});
+
 test('requires ownership and same-origin writes and rejects malformed input', async ({ request, playwright }) => {
 	const created = await request.post('/api/polls', { headers: { origin }, data: { title: 'API review', options: ['Yes'] } });
 	expect(created.status()).toBe(201);

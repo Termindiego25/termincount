@@ -11,7 +11,10 @@ if (args.some((arg) => !allowed.has(arg)) || new Set(args).size !== args.length 
 	throw new Error('Usage: npm run release -- [--database] [--check|--push]');
 }
 const database = args.includes('--database');
-const artifact = database ? `postgres-18.6-${pkg.version}` : pkg.version;
+const databaseDockerfile = await readFile(path.join(root, 'deploy/postgres/Dockerfile'), 'utf8');
+const postgresVersion = databaseDockerfile.match(/^\s+PG_VERSION=(\d+\.\d+)\s*\\?$/m)?.[1];
+if (!postgresVersion) throw new Error('The database Dockerfile must declare a stable PostgreSQL version.');
+const artifact = database ? `postgres-${postgresVersion}-${pkg.version}` : pkg.version;
 
 function run(command, arguments_, capture = false) {
 	const result = spawnSync(command, arguments_, {
@@ -28,7 +31,17 @@ const revision = run('git', ['rev-parse', 'HEAD'], true);
 const builder = process.env.TERMINCOUNT_BUILDER || 'termincount-builder-node26';
 const platforms = process.env.TERMINCOUNT_PLATFORMS || 'linux/amd64,linux/arm64';
 const repository = 'termindiego25/termincount';
-const tags = database ? [artifact, 'postgres-18.6'] : [pkg.version, pkg.version.split('.').slice(0, 2).join('.'), 'latest'];
+const tags = database ? [artifact, `postgres-${postgresVersion}`] : [pkg.version, pkg.version.split('.').slice(0, 2).join('.'), 'latest'];
+if (args.includes('--push')) {
+	const taggedRevision = run('git', ['rev-parse', `v${pkg.version}^{commit}`], true);
+	if (taggedRevision !== revision) throw new Error(`Tag v${pkg.version} must point to HEAD before publication.`);
+	const existing = spawnSync('docker', ['buildx', 'imagetools', 'inspect', `${repository}:${artifact}`], { encoding: 'utf8' });
+	if (existing.error) throw existing.error;
+	if (existing.status === 0) throw new Error(`Refusing to overwrite existing release ${repository}:${artifact}.`);
+	if (!/manifest unknown|not found|404 Not Found/i.test(existing.stderr ?? '')) {
+		throw new Error(`Cannot establish that the exact release tag is unused: ${existing.stderr?.trim()}`);
+	}
+}
 run('docker', ['buildx', 'inspect', builder, '--bootstrap']);
 await mkdir(path.join(root, 'artifacts'), { recursive: true });
 const buildArgs = [
@@ -38,14 +51,12 @@ const buildArgs = [
 	'--build-arg', `VERSION=${pkg.version}`, '--build-arg', `VCS_REF=${revision}`,
 	'--build-arg', `BUILD_DATE=${new Date().toISOString()}`,
 	'--sbom=true', '--provenance=mode=max',
-	'--annotation', `index:org.opencontainers.image.version=${database ? '18.6' : pkg.version}`,
+	'--annotation', `index:org.opencontainers.image.version=${database ? postgresVersion : pkg.version}`,
 	'--annotation', `index:org.opencontainers.image.revision=${revision}`,
 	'--metadata-file', `artifacts/release-${artifact}.json`,
 	...tags.flatMap((tag) => ['--tag', `${repository}:${tag}`])
 ];
 if (args.includes('--push')) {
-	const taggedRevision = run('git', ['rev-parse', `v${pkg.version}^{commit}`], true);
-	if (taggedRevision !== revision) throw new Error(`Tag v${pkg.version} must point to HEAD before publication.`);
 	buildArgs.push('--push');
 } else if (args.includes('--check')) buildArgs.push('--output=type=cacheonly');
 else buildArgs.push('--output', `type=oci,dest=artifacts/termincount-${artifact}.oci.tar`);

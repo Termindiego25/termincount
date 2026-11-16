@@ -1,6 +1,18 @@
 # Changelog
 
-## Unreleased
+## 1.6.2 - 2026-11-16
+
+- Integrate Dependabot #29-38 and refresh the latest compatible stable application/build dependencies, including SvelteKit 3.2.0, adapter-node 6.0.2, Vite 8.3.8, Bootstrap 5.3.9, Playwright 1.65.1 and Undici 8.12.4.
+- Apply the Node 26.13.1 and PostgreSQL 18.7 security releases. Refresh the pinned Wolfi snapshot, Go 1.27.4, x/sys 0.50.0 and Syft 1.57.1; retain PostgreSQL 18 data compatibility and the existing Secret/env-file contract.
+- Replace the Svelte build plugin's vulnerable deepmerge with pinned, API-compatible @stackline/deepmerge 1.1.2. Exercise the advisory's prototype-poisoning cases and configuration-merge behavior; reject all severity levels in project and build-repair dependency audits.
+- Review and test npm 12.2.2's glob 14/minimatch 11 adaptation instead of leaving the known pattern-processing advisories unresolved. Test installed module identities, cancellation, workspaces, clean installs, packaging and native-addon compilation.
+- Create all poll options in one parameterized database statement instead of one statement per option. Add a regression for all nine positions and the last option's votes.
+- Derive database publication tags from the Dockerfile's engine version to prevent stale PostgreSQL version labels.
+- Allow an explicitly selected disposable-test subnet on development hosts whose Docker address pools are already full; production networks are unchanged.
+
+There are no schema, owner-cookie, poll URL, Secret or application env-file changes. Existing Wolfi installations require a fresh verified backup and controlled replacement of both containers, not another Alpine-to-Wolfi migration. Read the PostgreSQL 18.7 maintenance notes in Operations and preserve existing migration checkpoints.
+
+### Previously Integrated Source Maintenance
 
 - Review Dependabot #23-26: the pinned Wolfi PostgreSQL snapshot, moby/sys/user 0.5.0, npm's compatible ip-address 10.7.5 repair and Svelte 5.57.3.
 - Repair the Go updater's empty-module failure using build-tagged dependency imports, locked checksums and non-mutating tidy checks against the real upstream helper source. Verify both repaired modules in the generated helper inventory.
@@ -10,7 +22,7 @@
 - Document the newly reviewed low-severity deepmerge build-tool advisory, its lack of an upstream patched release and its exclusion from production dependencies. Do not force obsolete framework downgrades to hide the warning.
 - Record the separate glob/minimatch findings in npm's build CLI and their unsupported major-version fixes. Keep the raw findings visible pending a compatible upstream update or separately reviewed migration; final runtime scans do not cover this toolchain.
 
-These source changes do not rebuild or overwrite the published 1.6.1 images and do not deploy an installation. Publication and controlled maintenance remain separate steps; preserve all existing database migration checkpoints.
+The above source maintenance was originally integrated after 1.6.1 without republishing it. It is included in 1.6.2. The historical findings below are superseded where explicitly repaired by 1.6.2; no old exact-version image tag is overwritten. Publication and controlled maintenance remain separate steps.
 
 ## 1.6.1 - 2026-10-23
 

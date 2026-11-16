@@ -114,15 +114,11 @@ export async function createPoll(payload: CreatePollPayload, ownerSessionHash: s
 }
 
 async function insertOptions(client: pg.PoolClient, pollId: string, poll: Poll) {
-	for (const [index, slot] of poll.slots.entries()) {
-		await client.query(
-			`
-				INSERT INTO poll_options (poll_id, position, label, bar_type)
-				VALUES ($1, $2, $3, $4)
-			`,
-			[pollId, index, slot.slotlabel, slot.barType]
-		);
-	}
+	await client.query(`
+		INSERT INTO poll_options (poll_id, position, label, bar_type)
+		SELECT $1, (position - 1)::integer, label, bar_type
+		FROM unnest($2::text[], $3::text[]) WITH ORDINALITY AS options(label, bar_type, position)
+	`, [pollId, poll.slots.map((slot) => slot.slotlabel), poll.slots.map((slot) => slot.barType)]);
 }
 
 export async function getPoll(id: string): Promise<PollSnapshot | null> {
