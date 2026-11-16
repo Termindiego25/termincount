@@ -7,6 +7,7 @@
 - Replace the Svelte build plugin's vulnerable deepmerge with pinned, API-compatible @stackline/deepmerge 1.1.2. Exercise the advisory's prototype-poisoning cases and configuration-merge behavior; reject all severity levels in project and build-repair dependency audits.
 - Review and test npm 12.2.2's glob 14/minimatch 11 adaptation instead of leaving the known pattern-processing advisories unresolved. Test installed module identities, cancellation, workspaces, clean installs, packaging and native-addon compilation.
 - Create all poll options in one parameterized database statement instead of one statement per option. Add a regression for all nine positions and the last option's votes.
+- Keep setup action buttons disabled until their client handlers are attached, preventing early mobile clicks from silently doing nothing while preserving text entered before hydration.
 - Derive database publication tags from the Dockerfile's engine version to prevent stale PostgreSQL version labels.
 - Allow an explicitly selected disposable-test subnet on development hosts whose Docker address pools are already full; production networks are unchanged.
 
