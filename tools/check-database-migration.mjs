@@ -9,6 +9,9 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const image = process.argv[2] ?? 'termincount-postgres:ci';
 const previousImage = process.argv[3];
+const databaseDockerfile = await readFile(path.join(root, 'deploy/postgres/Dockerfile'), 'utf8');
+const postgresVersion = databaseDockerfile.match(/^\s+PG_VERSION=(\d+\.\d+)\s*\\?$/m)?.[1];
+assert.ok(postgresVersion, 'The database must declare its engine version');
 const helperModule = await readFile(path.join(root, 'tools/gosu-repair/go.mod'), 'utf8');
 const sysVersion = helperModule.match(/^\s*golang\.org\/x\/sys\s+(\S+)\s*$/m)?.[1];
 const userVersion = helperModule.match(/^\s*github\.com\/moby\/sys\/user\s+(\S+)\s*$/m)?.[1];
@@ -16,6 +19,10 @@ assert.ok(sysVersion, 'The helper must lock x/sys');
 assert.ok(userVersion, 'The helper must lock moby/sys/user');
 const legacy = 'postgres:18.6-alpine3.24';
 const suffix = randomUUID().slice(0, 8);
+const testSubnet = process.env.TERMINCOUNT_TEST_SUBNET;
+if (testSubnet && !/^\d{1,3}(?:\.\d{1,3}){3}\/\d{1,2}$/.test(testSubnet)) {
+	throw new Error('TERMINCOUNT_TEST_SUBNET must be an IPv4 CIDR for the disposable test network.');
+}
 const label = `es.diegosr.termincount.migration-test=${suffix}`;
 const tempRoot = await realpath(os.tmpdir());
 const directory = await mkdtemp(path.join(tempRoot, 'termincount-db-image-test-'));
@@ -74,7 +81,8 @@ try {
 	await writeFile(path.join(directory, 'user'), 'termincount\n');
 	await writeFile(path.join(directory, 'database'), 'termincount\n');
 	await writeFile(path.join(directory, 'password'), 'migration-fixture-only\n');
-	network = text(['network', 'create', '--label', label, `termincount-migration-${suffix}`]);
+	network = text(['network', 'create', '--label', label,
+		...(testSubnet ? ['--subnet', testSubnet] : []), `termincount-migration-${suffix}`]);
 	const originalVolume = volume('legacy');
 	const restoredVolume = volume('restored');
 	const source = start('source', legacy, originalVolume);
@@ -122,7 +130,7 @@ try {
 	}
 	assert.equal(sql(target, "SELECT (xpath('/fixture/text()', xml_value))[1]::text FROM migration_fixture"), 'ok');
 	assert.equal(sql(target, "INSERT INTO migration_fixture(poll_id,owner_hash,label,votes,expires_at) VALUES ('second','owner','test','[0]',now()) RETURNING id").split('\n')[0], '2');
-	assert.match(sql(target, 'SELECT version()'), /PostgreSQL 18\.6/);
+	assert.ok(sql(target, 'SELECT version()').startsWith(`PostgreSQL ${postgresVersion} `));
 	assert.match(text(['exec', target, 'sh', '-c', 'grep "^Uid:" /proc/1/status']), /70\s+70\s+70\s+70/);
 	docker(['restart', '--time', '30', target]);
 	await ready(target);

@@ -30,16 +30,17 @@ jobs:
         with:
           node-version: '26'
           cache: npm
-      - run: npm install --global npm@12.2.1
+      - run: npm install --global npm@12.2.2
       - run: npm ci --prefix tools/npm-bundle --install-strategy=nested --ignore-scripts
       - run: node tools/npm-bundle/apply.mjs "$(npm root -g)/npm"
+      - run: node tools/npm-bundle/verify.mjs "$(npm root -g)/npm"
       - run: npm ci
       - run: npm test
       - run: npm run build
       - run: npx playwright install --with-deps chromium webkit
-      - run: npm audit --audit-level=moderate
+      - run: npm audit --audit-level=low
       - run: npm audit --omit=dev --audit-level=low
-      - run: npm audit --prefix tools/npm-bundle --audit-level=moderate
+      - run: npm audit --prefix tools/npm-bundle --audit-level=low
       - name: Verify the patched native build toolchain
         run: docker build --pull --target build-tool-test .
       - name: Verify the database image and startup contract

@@ -1,17 +1,18 @@
 # syntax=docker/dockerfile:1
 
-FROM --platform=$BUILDPLATFORM node:26.13.0-alpine3.24 AS base
+FROM --platform=$BUILDPLATFORM node:26.13.1-alpine3.24 AS base
 
 WORKDIR /app
 
-ARG NPM_VERSION=12.2.1
+ARG NPM_VERSION=12.2.2
 COPY tools/npm-bundle /opt/termincount-npm-bundle
 # Alpine 3.24 backports CVE-2026-107891 in r3; edge uses a different revision.
 RUN apk upgrade --no-cache \
     && apk add --no-cache 'musl>=1.2.6-r3' \
     && npm install -g "npm@${NPM_VERSION}" \
     && npm ci --prefix /opt/termincount-npm-bundle --install-strategy=nested --ignore-scripts \
-    && node /opt/termincount-npm-bundle/apply.mjs "$(npm root -g)/npm"
+    && node /opt/termincount-npm-bundle/apply.mjs "$(npm root -g)/npm" \
+    && node /opt/termincount-npm-bundle/verify.mjs "$(npm root -g)/npm"
 
 FROM base AS dependencies
 
@@ -37,14 +38,14 @@ ENV NODE_ENV=production
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-FROM node:26.13.0-alpine3.24 AS runtime-base
+FROM node:26.13.1-alpine3.24 AS runtime-base
 RUN apk upgrade --no-cache && apk add --no-cache 'musl>=1.2.6-r3'
 
 FROM scratch AS runtime
 
 WORKDIR /app
 
-ARG VERSION=1.6.1
+ARG VERSION=1.6.2
 ARG VCS_REF=unknown
 ARG BUILD_DATE=unknown
 

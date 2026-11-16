@@ -9,6 +9,12 @@ const npmPackage = JSON.parse(await readFile(path.join(npmRoot, 'package.json'),
 if (npmPackage.name !== 'npm') throw new Error('Target must be the installed npm package.');
 const { gte, satisfies } = createRequire(path.join(npmRoot, 'package.json'))('semver');
 const fixes = JSON.parse(await readFile(path.join(sourceRoot, 'package.json'), 'utf8'));
+// These two npm 12.2.2 adaptations are covered by the installed-CLI regression
+// suite and native addon fixture. Other major replacements still fail closed.
+const reviewedMajors = {
+	glob: { from: '13', to: '14.0.6' },
+	minimatch: { from: '10', to: '11.0.8' }
+};
 
 const replacements = Object.entries(fixes.dependencies).sort(([a], [b]) => {
 	if (a === 'node-gyp') return -1;
@@ -27,7 +33,10 @@ for (const [name, version] of replacements) {
 	}
 	if (installed.version.split('.')[0] !== version.split('.')[0]) {
 		const parent = JSON.parse(await readFile(path.join(npmRoot, 'node_modules/node-gyp/package.json'), 'utf8'));
-		if (name !== 'undici' || !satisfies(version, parent.dependencies?.undici ?? '')) {
+		const reviewed = reviewedMajors[name];
+		const reviewedNpmAdaptation = npmPackage.version === '12.2.2' && reviewed
+			&& installed.version.split('.')[0] === reviewed.from && version === reviewed.to;
+		if (!reviewedNpmAdaptation && (name !== 'undici' || !satisfies(version, parent.dependencies?.undici ?? ''))) {
 			throw new Error(`Review npm's ${name} API compatibility before changing its major version.`);
 		}
 	}

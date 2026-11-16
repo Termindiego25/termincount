@@ -99,6 +99,10 @@ Version 1.6.1 remains PostgreSQL 18.6 on Wolfi/glibc. Its fixture additionally o
 
 Before adopting any newly published maintenance images, take a verified fresh dump, record the currently running image digests/configuration, and validate the update on an isolated copy. Stop app writers and PostgreSQL cleanly before replacing the database container. The marker only identifies the runtime family; it is not proof that every future libc/image update is compatible. A changed collation version requires its own reviewed reindex/restore plan. Source review does not itself publish or deploy the patch.
 
+Version 1.6.2 updates the engine to PostgreSQL 18.7 on Wolfi, within the same PostgreSQL 18 data format. Its [release notes](https://www.postgresql.org/docs/release/18.7/) do not require dump/restore from 18.x, but describe index-corruption fixes and fresh-full-backup requirements for users of incremental backups. TerminCount's schema does not define the affected unconstrained bpchar, GIN or gist_trgm_ops indexes. Custom schemas/extensions must be assessed separately; reindex affected indexes before resuming writers. This is not a PostgreSQL 19 migration.
+
+Do not point an old database image at files changed by a newer runtime as an untested rollback. Preserve the recorded old image/configuration and a verified fresh backup, and test the previous-cluster replacement/collation contract before maintenance. Existing poll URLs, owner cookies, expiry timestamps, Secret files and env files remain unchanged. Retain all earlier migration checkpoints until the deployed update has been accepted.
+
 ## Rotating a database password
 
 After a verified backup, stop only the app and open PostgreSQL's interactive client. Use your database service name:

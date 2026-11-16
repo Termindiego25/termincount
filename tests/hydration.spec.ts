@@ -11,8 +11,11 @@ test('preserves setup values entered before client hydration', async ({ page }) 
 	await page.goto('/', { waitUntil: 'commit' });
 	await page.locator('#title').fill('Entered before hydration');
 	await page.locator('#o1').fill('Preserved option');
+	await expect(page.locator('#startPoll')).toBeDisabled();
+	await expect(page.locator('#addEntry')).toBeDisabled();
 	release();
 	await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+	await expect(page.locator('#startPoll')).toBeEnabled();
 	await page.locator('#startPoll').click();
 	await expect(page.locator('#question')).toHaveText('Entered before hydration');
 	await expect(page.locator('.vote-option')).toHaveCount(1);

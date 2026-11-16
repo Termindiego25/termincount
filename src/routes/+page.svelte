@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
 	import AppShell from '#lib/AppShell.svelte';
 	import { translate, type Language } from '#lib/i18n.js';
 	import { MAX_OPTIONS } from '#lib/voting.js';
@@ -9,6 +10,9 @@
 	let optionInputs = [''];
 	let isCreating = false;
 	let createError = '';
+	let hydrated = false;
+
+	onMount(() => { hydrated = true; });
 
 	$: pageTitle = t(currentLang, 'app.title');
 
@@ -105,7 +109,7 @@
 					type="button"
 					id="addEntry"
 					aria-describedby="help-max"
-					disabled={optionInputs.length >= MAX_OPTIONS || isCreating}
+					disabled={!hydrated || optionInputs.length >= MAX_OPTIONS || isCreating}
 					onclick={addEntry}
 				>
 					{t(currentLang, 'btn.add')}
@@ -115,7 +119,7 @@
 					type="button"
 					id="startPoll"
 					aria-describedby="help-default"
-					disabled={isCreating}
+					disabled={!hydrated || isCreating}
 					onclick={startPoll}
 				>
 					{isCreating ? t(currentLang, 'btn.creating') : t(currentLang, 'btn.start')}
