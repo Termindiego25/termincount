@@ -7,7 +7,7 @@ Dependency review for 1.6.2 on 2026-11-16. This covers TerminCount's source, bui
 | Surface | Reviewed version | Notes |
 | --- | --- | --- |
 | Node | 26.13.1 Lithium LTS | Latest stable release, including the November HTTP/TLS/runtime security fixes; Node 27 remains alpha. |
-| App/build Alpine | 3.24.3 / 3.24 repositories | Current stable branch; verified inside the reviewed build image, with available APK updates applied. |
+| App/build Alpine | 3.24.4 / 3.24 repositories | Current stable branch; verified inside the reviewed build image, with available APK updates applied. |
 | npm | 12.2.2 | Latest npm, with reviewed bundled-library repairs and CLI compatibility tests below. |
 | Svelte / SvelteKit | 5.57.3 / 3.2.0 | Latest stable releases. |
 | adapter-node / Vite plugin | 6.0.2 / 7.3.1 | Runtime ORIGIN preserved by tools/server.mjs; scoped merge replacement. |
@@ -45,6 +45,16 @@ npm 12.2.2 still declares glob 13/minimatch 10. Their newest releases in those m
 The Node [26.13.1 security release](https://nodejs.org/en/blog/release/v26.13.1) repairs embedded runtime issues that npm alerts cannot see. It embeds Undici 8.12.4, matching the managed application API implementation. Both app Docker stages use this Node release and apply the available stable Alpine package updates. The database uses the [PostgreSQL 18.7 security release](https://www.postgresql.org/docs/release/18.7/). A supported 18.x minor upgrade does not itself require dump/restore; custom indexes/extensions and collation changes still need assessment. See Operations before replacing a deployed container.
 
 All-severity project, production-only and repair-bundle audits are release gates. Scan actual final app/database images on both architectures and the repaired build image separately. Container/CI verification and actual server acceptance are different gates; never mark an alert dismissed merely to produce a clean page. The older reviews below are retained as dated history and are superseded by the explicitly described 1.6.2 repairs.
+
+### Remaining Vendor Findings on 2026-11-16
+
+The rebuilt application and database final images have zero Scout findings on amd64 and arm64. This does not clear the build base: its actual-file scan retains five OpenSSL advisories (CVE-2026-107496, CVE-2026-88822, CVE-2026-88823, CVE-2026-95691 and CVE-2026-95692) in Alpine's OpenSSL 3.5.9-r0, plus the previously investigated musl revision mismatch. No glob/minimatch advisory remains in the repaired npm filesystem. Raw findings are retained without filtering, VEX or dismissals.
+
+The official Alpine 3.24 [OpenSSL recipe](https://github.com/alpinelinux/aports/blob/3.24-stable/main/openssl/APKBUILD) still publishes 3.5.9-r0. Its [edge recipe](https://github.com/alpinelinux/aports/blob/master/main/openssl/APKBUILD) has the five backport patches in r1, but mixing edge binaries into a stable builder is not an assessed compatibility fix. Follow the [OpenSSL advisories](https://www.openssl-library.org/news/vulnerabilities/) and adopt a stable vendor backport when available. Build only trusted source, without production credentials; these APK libraries are not copied into the final application runtime. The musl CVE-2026-107891 fix is explicitly recorded at 1.2.6-r3 by the [Alpine 3.24 security database](https://secdb.alpinelinux.org/v3.24/main.json), despite Scout requesting edge's r6. Keep these two assessments distinct.
+
+The actual Node 26.13.1 binary reports embedded OpenSSL 3.5.9. A clean npm/final-image scan does not prove that embedded cryptographic code is free of every upstream advisory. Keep tracking Node's vendor updates and assess the exposed API, rather than treating the Node version as a blanket OpenSSL fix. TerminCount serves HTTP behind the TLS proxy and does not expose CMS encryption or a general cryptographic-processing API; this limits the current reviewed surface, not the upstream library defect. No claim of a vulnerability-free entire toolchain or deployment is made.
+
+Local verification passed seven unit/security tests and 30 browser/API tests, including mobile hydration, nine-option insertion, owners/read-only viewers, live updates, retries, cleanup and proxy origins. The database fixture restored and replaced the deployed 1.6.0 Wolfi image with unchanged synthetic records, sequences and collation versions. Both target architectures built successfully; the native-addon fixture and installed-CLI compatibility checks passed. Actual production acceptance remains separate.
 
 ## Historical Reviews
 
