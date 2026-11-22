@@ -13,7 +13,7 @@ const fixes = JSON.parse(await readFile(path.join(sourceRoot, 'package.json'), '
 // suite and native addon fixture. Other major replacements still fail closed.
 const reviewedMajors = {
 	glob: { from: '13', to: '14.0.6' },
-	minimatch: { from: '10', to: '11.0.8' }
+	minimatch: { from: '10', to: '11.0.9' }
 };
 
 const replacements = Object.entries(fixes.dependencies).sort(([a], [b]) => {

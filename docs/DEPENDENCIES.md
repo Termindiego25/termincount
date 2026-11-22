@@ -4,6 +4,10 @@ Dependency review for 1.6.2 on 2026-11-16. This covers TerminCount's source, bui
 
 ## Versions
 
+After the 1.6.2 release, source builds use Syft 1.57.2, Wolfi snapshot
+`9cc08528`, and minimatch 11.0.9 in the npm repair bundle. The table below
+records the published 1.6.2 images, which are unchanged.
+
 | Surface | Reviewed version | Notes |
 | --- | --- | --- |
 | Node | 26.13.1 Lithium LTS | Latest stable release, including the November HTTP/TLS/runtime security fixes; Node 27 remains alpha. |
