@@ -2,9 +2,11 @@
 
 Release commands belong here rather than in the user-facing README.
 
+A shipped fix is not complete at Git merge. Publish both multi-platform images for the same release commit, verify their exact and moving tags against the registry, and only then publish the GitHub release. Deploying to a running installation is a separate step.
+
 1. Update package.json, package-lock.json, the Docker VERSION default, Compose image defaults, and the changelog. Keep the package manager version consistent with Docker.
 2. Run `npm ci`, `npm test`, `npm run build`, `npm run test:e2e`, and `npm audit`. Also run `npm ci --prefix tools/npm-bundle --install-strategy=nested --ignore-scripts` and `npm audit --prefix tools/npm-bundle`. Scan the build stage, exported runtime and PostgreSQL separately. The runtime copies Node and its shared libraries into scratch; it still needs rebuilding when Node or Alpine publishes fixes.
-3. Commit the reviewed files, create an annotated tag matching package.json (currently `v1.6.2`), and push the commit/tag to GitHub. Do not rebuild a release from an uncommitted working tree.
+3. Commit the reviewed files, create an annotated tag matching package.json (currently `v1.6.3`), and push the commit/tag to GitHub. Do not rebuild a release from an uncommitted working tree.
 4. Create a docker-container builder once if needed:
 
    ```bash

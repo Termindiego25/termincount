@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.3 - 2026-11-22
+
+- Refresh the pinned Wolfi PostgreSQL base and the Syft inventory tool (1.57.2). PostgreSQL stays on 18.7.
+- Update the reviewed npm build repair to minimatch 11.0.9 with a regression check for repeated numeric-range patterns. No schema or application configuration changes.
+
 ## 1.6.2 - 2026-11-16
 
 - Integrate Dependabot #29-38 and refresh the latest compatible stable application/build dependencies, including SvelteKit 3.2.0, adapter-node 6.0.2, Vite 8.3.8, Bootstrap 5.3.9, Playwright 1.65.1 and Undici 8.12.4.
