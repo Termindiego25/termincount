@@ -19,6 +19,8 @@ const { glob, globSync, hasMagic } = npmRequire('glob');
 const { minimatch, Minimatch, match, filter } = npmRequire('minimatch');
 assert.ok(hasMagic('src/**/*.js'));
 assert.ok(minimatch('src/index.js', '**/*.js'));
+assert.equal(minimatch('src/510', 'src/*({1..100})'), false);
+assert.equal(minimatch('src/55', 'src/*({1..100})'), true);
 assert.deepEqual(match(['a.js', 'b.ts'], '*.js'), ['a.js']);
 assert.deepEqual(['a.js', 'b.ts'].filter(filter('*.ts')), ['b.ts']);
 assert.ok(new Minimatch('**/test-@(a|b).js', { dot: true, optimizationLevel: 2 }).match('.hidden/test-a.js'));
