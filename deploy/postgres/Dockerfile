@@ -19,7 +19,7 @@ RUN go mod tidy -diff \
 COPY --from=sbom-tool /syft /usr/local/bin/syft
 RUN syft scan file:/out/gosu -o spdx-json=/out/gosu.spdx.json
 
-FROM cgr.dev/chainguard/postgres:latest@sha256:9cc085289d7ef0174f35f2ff1e514624c3305c4a26215d8e89e3e277e3377d03 AS refreshed
+FROM cgr.dev/chainguard/postgres:latest@sha256:edfe8fa29bdcb03a56e60bab37f4396d7a7926d5c8626c8953da30fdae3ab522 AS refreshed
 COPY --from=startup-helper /out/gosu /usr/bin/gosu
 COPY --from=startup-helper /out/gosu.spdx.json /tmp/termincount-gosu.spdx.json
 RUN set -eu; set -- /var/lib/db/sbom/gosu-*.spdx.json; \
